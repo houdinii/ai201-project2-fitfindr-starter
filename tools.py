@@ -7,7 +7,7 @@ can be called and tested independently before being wired into the agent loop.
 Complete and test each tool before moving to agent.py.
 
 Tools:
-    search_listings(description, size, max_price)  → list[dict]
+    search_listings(description, size, max_price)   → list[dict]
     suggest_outfit(new_item, wardrobe)              → str
     create_fit_card(outfit, new_item)               → str
 """

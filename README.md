@@ -59,3 +59,7 @@ wardrobe = get_example_wardrobe()
 3. Build and test each tool individually before connecting them through your planning loop.
 
 Your implementation files go in this same directory. There's no required file structure for your agent code — organize it however makes sense for your design.
+
+---
+
+`item_id` is a foreign key and the session is the database. In production those lookups would be real DB calls, here they're dict lookups against `session`. Same architecture, smaller hardware.
