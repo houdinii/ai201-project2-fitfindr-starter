@@ -1,20 +1,20 @@
 # FitFindr Build Checklist
 
 ## Setup (5 min)
-- [ ] `source .venv/bin/activate`
-- [ ] `python utils/data_loader.py` runs clean
+- [x] `source .venv/bin/activate`
+- [x] `python utils/data_loader.py` runs clean
 
 ## search_listings (no LLM, fastest win)
-- [ ] Implement `search_listings`
-- [ ] Null brand skipped, no crash
-- [ ] "L" does NOT match "XL"
-- [ ] "One Size" matches any size
-- [ ] Test: normal query returns results
-- [ ] Test: impossible query returns `[]`
-- [ ] Test: price filter respected
-- [ ] Test: size token matching
-- [ ] `pytest tests/` green
-- [ ] Paste pytest output into EVIDENCE.md
+- [x] Implement `search_listings`
+- [x] Null brand skipped, no crash
+- [x] "L" does NOT match "XL"
+- [x] "One Size" matches any size
+- [x] Test: normal query returns results
+- [x] Test: impossible query returns `[]`
+- [x] Test: price filter respected
+- [x] Test: size token matching
+- [x] `pytest tests/` green
+- [x] Paste pytest output into EVIDENCE.md
 
 ## suggest_outfit
 - [ ] Implement `suggest_outfit` (Groq)
