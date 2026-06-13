@@ -42,6 +42,7 @@ from tools import (
     suggest_outfit,
 )
 from utils.data_loader import load_listings
+from utils.trace import log, trunc
 
 MAX_ITERATIONS = 10
 
@@ -79,8 +80,11 @@ def _load_style_profile() -> list[str]:
     treated as an empty profile, per the Error Handling table."""
     try:
         with open(_STYLE_PROFILE_PATH, "r", encoding="utf-8") as f:
-            return list(json.load(f)["preferences"])
+            prefs = list(json.load(f)["preferences"])
+        log(f"file read  data/style_profile.json ({len(prefs)} prefs)")
+        return prefs
     except (OSError, json.JSONDecodeError, KeyError, TypeError):
+        log("file read  data/style_profile.json (none, new profile)")
         return []
 
 
@@ -446,6 +450,8 @@ def run_agent(query: str, wardrobe: dict) -> dict:
         though partial results (an outfit without a caption, retry
         notices) may still be populated.
     """
+    log(f"session START query={trunc(query, 60)!r} "
+        f"wardrobe={len(wardrobe.get('items', []))} items")
     session = _new_session(query, wardrobe)
     session["style_profile"] = _load_style_profile()
 
@@ -453,6 +459,7 @@ def run_agent(query: str, wardrobe: dict) -> dict:
         client = _get_groq_client()
     except ValueError as exc:
         session["error"] = str(exc)
+        log(f"session END error={trunc(session['error'], 60)}")
         return session
 
     messages = [
@@ -464,6 +471,9 @@ def run_agent(query: str, wardrobe: dict) -> dict:
            and session["iterations"] < MAX_ITERATIONS):
         session["iterations"] += 1
 
+        log(f"llm  call  router iter {session['iterations']} "
+            f"(msgs={len(messages)}, temp=0.2)")
+        t0 = time.time()
         try:
             response = _call_with_retry(lambda: client.chat.completions.create(
                 model=_GROQ_MODEL,
@@ -475,9 +485,14 @@ def run_agent(query: str, wardrobe: dict) -> dict:
         except Exception:
             session["error"] = ("The styling service is busy, try again "
                                 "in a moment.")
+            log("llm  resp  router FAILED after retry")
             break
 
         msg = response.choices[0].message
+        decided = ([tc.function.name for tc in msg.tool_calls]
+                   if msg.tool_calls else "none (final message)")
+        log(f"llm  resp  router iter {session['iterations']} "
+            f"({(time.time() - t0) * 1000:.0f}ms) -> {decided}")
 
         if not msg.tool_calls:
             # The router signalled it is done talking. With no fit card
@@ -512,11 +527,13 @@ def run_agent(query: str, wardrobe: dict) -> dict:
             except (json.JSONDecodeError, ValueError):
                 args = None
 
+            log(f"tool call  {tc.function.name} args={trunc(args, 70)}")
             if args is None:
                 observation = (f"Invalid arguments for {tc.function.name}, "
                                f"send a valid JSON object.")
             else:
                 observation = _execute_tool(tc.function.name, args, session)
+            log(f"tool ret   {tc.function.name} -> {trunc(observation, 80)}")
 
             session["tool_log"].append({
                 "tool": tc.function.name,
@@ -544,6 +561,10 @@ def run_agent(query: str, wardrobe: dict) -> dict:
             f"try re-running or simplifying the query."
         )
 
+    outcome = ("fit_card" if session["fit_card"]
+               else f"error={trunc(session['error'], 50)}")
+    log(f"session END {outcome} (iters={session['iterations']}, "
+        f"tools={len(session['tool_log'])})")
     return session
 
 

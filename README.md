@@ -65,6 +65,33 @@ print(create_fit_card('', results[0]))
 
 **End-to-end:** `python agent.py` runs the built-in happy path plus the no-results path. `python app.py` serves the Gradio interface (URL prints in the terminal).
 
+## Debug Logging
+
+Set `FITFINDR_LOG=1` to stream a one-line trace of every LLM call, tool call, and file read/write to stderr, each timestamped to the millisecond. It is off by default, so pytest and normal runs stay quiet, and it is gated by `utils/trace.py`. Turn it on to watch a run unfold or to debug a misbehaving query:
+
+```bash
+FITFINDR_LOG=1 python app.py
+FITFINDR_LOG=1 python agent.py
+```
+
+A healthy happy path reads top to bottom like this:
+
+```
+21:51:04.830 session START query='vintage graphic tee under $30' wardrobe=10 items
+21:51:04.830 file read  data/style_profile.json (none, new profile)
+21:51:04.867 llm  call  router iter 1 (msgs=2, temp=0.2)
+21:51:05.398 llm  resp  router iter 1 (531ms) -> ['search_listings']
+21:51:05.398 tool call  search_listings args={'description': 'vintage graphic tee', 'max_price': 30}
+21:51:05.398 file read  data/listings.json (40 listings)
+21:51:05.399 tool ret   search_listings -> 20 result(s), best match first: lst_002 ...
+21:51:06.001 llm  resp  router iter 3 (253ms) -> ['suggest_outfit']
+21:51:07.069 llm  resp  suggest_outfit (1054ms, 855 chars)
+21:51:07.983 tool ret   create_fit_card -> Fit card created. The interaction is complete.
+21:51:07.983 session END fit_card (iters=4, tools=4)
+```
+
+Long values are truncated to one line, and secrets (the API key, `.env`) are never logged. See `HUMAN_TEST.md` for a poll of queries to run with logging on.
+
 ## The Mock Listings Dataset
 
 `data/listings.json` contains 40 mock secondhand listings across categories (tops, bottoms, outerwear, shoes, accessories) and styles (vintage, y2k, grunge, cottagecore, streetwear, and more).

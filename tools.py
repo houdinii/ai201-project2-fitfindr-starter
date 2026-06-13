@@ -19,11 +19,13 @@ import json
 import os
 import re
 import statistics
+import time
 
 from dotenv import load_dotenv
 from groq import Groq
 
 from utils.data_loader import load_listings
+from utils.trace import log, trunc
 
 load_dotenv()
 
@@ -237,6 +239,10 @@ def suggest_outfit(
         ]
 
     client = _get_groq_client()
+    log(f"llm  call  suggest_outfit (item={trunc(new_item['title'], 40)}, "
+        f"wardrobe={len(items)}, profile={len(style_profile or [])}, "
+        f"trends={len(trends or [])}, temp=0.7)")
+    t0 = time.time()
     response = client.chat.completions.create(
         model=_GROQ_MODEL,
         messages=[
@@ -254,6 +260,8 @@ def suggest_outfit(
     )
 
     text = (response.choices[0].message.content or "").strip()
+    log(f"llm  resp  suggest_outfit ({(time.time() - t0) * 1000:.0f}ms, "
+        f"{len(text)} chars)")
     if not text:
         raise RuntimeError(
             f"suggest_outfit got an empty LLM response for "
@@ -317,6 +325,9 @@ def create_fit_card(outfit: str, new_item: dict) -> str:
     ])
 
     client = _get_groq_client()
+    log(f"llm  call  create_fit_card (item={trunc(new_item['title'], 40)}, "
+        f"temp=1.0)")
+    t0 = time.time()
     response = client.chat.completions.create(
         model=_GROQ_MODEL,
         messages=[
@@ -334,6 +345,8 @@ def create_fit_card(outfit: str, new_item: dict) -> str:
     )
 
     text = (response.choices[0].message.content or "").strip()
+    log(f"llm  resp  create_fit_card ({(time.time() - t0) * 1000:.0f}ms, "
+        f"{len(text)} chars)")
     if not text:
         raise RuntimeError(
             f"create_fit_card got an empty LLM response for "
@@ -452,7 +465,9 @@ def check_trends(
     try:
         with open(_TRENDS_PATH, "r", encoding="utf-8") as f:
             trends = json.load(f)["trends"]
+        log(f"file read  data/trends.json ({len(trends)} trends)")
     except (OSError, json.JSONDecodeError, KeyError, TypeError):
+        log("file read  data/trends.json FAILED (missing/corrupt) -> []")
         return []
 
     listings = load_listings()
@@ -519,11 +534,17 @@ def save_style_preference(preference: str) -> list[str] | str:
         try:
             with open(_STYLE_PROFILE_PATH, "w", encoding="utf-8") as f:
                 json.dump({"preferences": preferences}, f, indent=2)
+            log(f"file write data/style_profile.json ({len(preferences)} "
+                f"prefs, added '{trunc(cleaned, 40)}')")
         except OSError as exc:
+            log(f"file write data/style_profile.json FAILED ({trunc(exc, 50)})")
             return (
                 f"Couldn't save the preference '{cleaned}' to the style "
                 f"profile ({exc}). The rest of the session continues "
                 f"normally, try saving it again later."
             )
+    else:
+        log(f"file write data/style_profile.json SKIPPED "
+            f"({'duplicate' if already_saved else 'empty'})")
 
     return preferences

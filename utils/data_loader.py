@@ -8,6 +8,8 @@ import json
 import os
 from typing import Optional
 
+from utils.trace import log
+
 # Resolve the path to the data directory relative to this file
 _DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 
@@ -32,7 +34,9 @@ def load_listings() -> list[dict]:
     """
     path = os.path.join(_DATA_DIR, "listings.json")
     with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
+        data = json.load(f)
+    log(f"file read  data/listings.json ({len(data)} listings)")
+    return data
 
 
 def load_wardrobe_schema() -> dict:
@@ -47,7 +51,9 @@ def load_wardrobe_schema() -> dict:
     """
     path = os.path.join(_DATA_DIR, "wardrobe_schema.json")
     with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
+        data = json.load(f)
+    log("file read  data/wardrobe_schema.json")
+    return data
 
 
 def get_example_wardrobe() -> dict:
