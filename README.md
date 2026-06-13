@@ -26,6 +26,45 @@ Set your Groq API key in a `.env` file (get a free key at [console.groq.com](htt
 GROQ_API_KEY=your_key_here
 ```
 
+## Testing
+
+All automated tests live in `tests/` and run with pytest (configured via `pytest.ini`, no path setup needed):
+
+```bash
+pytest                                  # everything
+pytest -v                               # everything, one line per test
+pytest tests/test_tools.py              # one file
+pytest tests/test_tools.py -k empty     # tests matching a keyword
+```
+
+Current coverage: `tests/test_data_loader.py` smoke-tests the data layer (40 listings load with all fields, example and empty wardrobes load). `tests/test_tools.py` holds the per-tool tests, at least one per failure mode, added as each tool is implemented.
+
+Note: tests for the pure-local tools (`search_listings`, `compare_prices`) run offline. Tests touching the LLM tools need `GROQ_API_KEY` in `.env`.
+
+**Manual failure drills** (each must return a message, never a traceback):
+
+```bash
+# zero results, no exception
+python -c "from tools import search_listings; print(search_listings('designer ballgown', size='XXS', max_price=5))"
+
+# empty wardrobe, still useful output
+python -c "
+from tools import search_listings, suggest_outfit
+from utils.data_loader import get_empty_wardrobe
+results = search_listings('vintage graphic tee', size=None, max_price=50)
+print(suggest_outfit(results[0], get_empty_wardrobe()))
+"
+
+# empty outfit string, error message not exception
+python -c "
+from tools import search_listings, create_fit_card
+results = search_listings('vintage graphic tee', size=None, max_price=50)
+print(create_fit_card('', results[0]))
+"
+```
+
+**End-to-end:** `python agent.py` runs the built-in happy path plus the no-results path. `python app.py` serves the Gradio interface (URL prints in the terminal).
+
 ## The Mock Listings Dataset
 
 `data/listings.json` contains 40 mock secondhand listings across categories (tops, bottoms, outerwear, shoes, accessories) and styles (vintage, y2k, grunge, cottagecore, streetwear, and more).
