@@ -32,12 +32,12 @@
 - [x] Test: empty outfit case
 
 ## stretch tools
-- [ ] Implement `compare_prices`
-- [ ] Test: under 3 comparables → "not enough data"
-- [ ] Implement `save_style_preference`
-- [ ] Writes file AND `session["style_profile"]`
-- [ ] Author `data/trends.json` (real tags + 2 fakes)
-- [ ] Implement `check_trends`
+- [x] Implement `compare_prices`
+- [x] Test: under 3 comparables → "not enough data"
+- [x] Implement `save_style_preference`
+- [x] Writes file AND `session["style_profile"]`
+- [x] Author `data/trends.json` (real tags + 2 fakes)
+- [x] Implement `check_trends`
 - [ ] Test: missing trends.json → `[]`
 
 ## router (agent.py)

@@ -1,0 +1,149 @@
+{
+  "_source": "Wikimedia Pageviews API (en.wikipedia, all-access, user traffic). Real reader-interest data for fashion style articles. mentions = pageviews over the most recent 30 days, momentum = 30-day views vs the prior 30 days, as a ratio - 1.",
+  "_fetched": "2026-06-12",
+  "_window": {
+    "start": "2026-04-12",
+    "end": "2026-06-10"
+  },
+  "_script": "utils/fetch_trends.py",
+  "trends": [
+    {
+      "tag": "denim",
+      "article": "Denim",
+      "mentions": 17537,
+      "momentum": -0.027
+    },
+    {
+      "tag": "y2k",
+      "article": "Y2K_aesthetic",
+      "mentions": 12612,
+      "momentum": -0.014
+    },
+    {
+      "tag": "crochet",
+      "article": "Crochet",
+      "mentions": 11632,
+      "momentum": -0.03
+    },
+    {
+      "tag": "2000s",
+      "article": "2000s_in_fashion",
+      "mentions": 11609,
+      "momentum": 0.037
+    },
+    {
+      "tag": "dark academia",
+      "article": "Dark_academia",
+      "mentions": 9890,
+      "momentum": 0.07
+    },
+    {
+      "tag": "gorpcore",
+      "article": "Gorpcore",
+      "mentions": 9694,
+      "momentum": 0.083
+    },
+    {
+      "tag": "90s",
+      "article": "1990s_in_fashion",
+      "mentions": 9233,
+      "momentum": -0.01
+    },
+    {
+      "tag": "cottagecore",
+      "article": "Cottagecore",
+      "mentions": 8311,
+      "momentum": -0.124
+    },
+    {
+      "tag": "goth",
+      "article": "Gothic_fashion",
+      "mentions": 7452,
+      "momentum": -0.009
+    },
+    {
+      "tag": "preppy",
+      "article": "Preppy",
+      "mentions": 7412,
+      "momentum": -0.107
+    },
+    {
+      "tag": "tie-dye",
+      "article": "Tie-dye",
+      "mentions": 7026,
+      "momentum": 0.106
+    },
+    {
+      "tag": "flannel",
+      "article": "Flannel",
+      "mentions": 6723,
+      "momentum": -0.051
+    },
+    {
+      "tag": "boho",
+      "article": "Boho-chic",
+      "mentions": 5862,
+      "momentum": -0.1
+    },
+    {
+      "tag": "streetwear",
+      "article": "Streetwear",
+      "mentions": 5592,
+      "momentum": -0.084
+    },
+    {
+      "tag": "athletic",
+      "article": "Athleisure",
+      "mentions": 4971,
+      "momentum": -0.086
+    },
+    {
+      "tag": "western",
+      "article": "Western_wear",
+      "mentions": 4555,
+      "momentum": -0.021
+    },
+    {
+      "tag": "cargo",
+      "article": "Cargo_pants",
+      "mentions": 3377,
+      "momentum": -0.077
+    },
+    {
+      "tag": "vintage",
+      "article": "Vintage_clothing",
+      "mentions": 2904,
+      "momentum": -0.091
+    },
+    {
+      "tag": "platform",
+      "article": "Platform_shoe",
+      "mentions": 2098,
+      "momentum": -0.018
+    },
+    {
+      "tag": "workwear",
+      "article": "Workwear",
+      "mentions": 1710,
+      "momentum": -0.074
+    },
+    {
+      "tag": "grunge",
+      "article": "Grunge_fashion",
+      "mentions": 1370,
+      "momentum": -0.022
+    },
+    {
+      "tag": "knitwear",
+      "article": "Knitwear",
+      "mentions": 228,
+      "momentum": -0.12
+    },
+    {
+      "tag": "barbiecore",
+      "article": "Barbiecore",
+      "mentions": 121,
+      "momentum": 0.09
+    }
+  ]
+}

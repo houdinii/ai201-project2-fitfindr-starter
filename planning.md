@@ -135,9 +135,9 @@ If fewer than 3 comparables exist even after the category fallback, the verdict 
 
 **What it does:**
 
-Surfaces which styles are currently popular by reading `data/trends.json`, a bundled DUMMY snapshot of tag activity formatted like a fashion-platform feed. The numbers are synthetic, invented for this project, and the file marks itself as dummy data. The README documents this honestly as the data source, with the interface written so a live API could swap in. Results can be narrowed to a category and cross-referenced against the user's size so trends are only surfaced when something matching is actually in stock.
+Surfaces which styles are currently popular by reading `data/trends.json`, a snapshot of REAL reader-interest data from the Wikimedia Pageviews API (official, public, keyless), fetched by `utils/fetch_trends.py`. Each of the dataset's style tags maps to an English Wikipedia style article, such as y2k to `Y2K_aesthetic`. `mentions` is that article's pageviews over the most recent 30 days, `momentum` is the recent 30 days vs the prior 30 as a ratio minus 1. Two real trends with no stock in the listings (gorpcore, barbiecore) are included deliberately so the tool can honestly report `in_stock: 0`. The README documents this as the data source, and rerunning the script refreshes the snapshot. Results can be narrowed to a category and cross-referenced against the user's size so trends are only surfaced when something matching is actually in stock.
 
-Precisely: `trends.json` stores `tag`, `mentions`, and `momentum` per trend. Category narrowing and the `in_stock` count are computed against `listings.json` at call time, and size matching reuses the same token rule as `search_listings`. A trend with no listings in the requested category is dropped. With no category filter, trends are returned even when nothing in stock carries the tag, since trend data is flavor.
+Precisely: `trends.json` stores `tag`, `article`, `mentions`, and `momentum` per trend, under a top-level `trends` key alongside `_source`, `_fetched`, `_window`, and `_script` metadata. The tool returns only the four specced fields. Category narrowing and the `in_stock` count are computed against `listings.json` at call time, and size matching reuses the same token rule as `search_listings`. A trend with no listings in the requested category is dropped. With no category filter, trends are returned even when nothing in stock carries the tag, since trend data is flavor.
 
 **Input parameters:**
 
@@ -251,9 +251,9 @@ All four stretch features are committed. Each one ships as implement, demonstrat
 - **Retry Logic with Fallback (+1).** On zero results the router retries up to twice, loosening one constraint at a time, `size` first, then `max_price`, telling the user what was adjusted each time. Hard cap via `MAX_ITERATIONS`. Canonical in the Planning Loop section above.
 - **Price Comparison Tool (+2).** `compare_prices`, specced as Tool 4 above. Evidence: demo or source showing an assessment with reasoning, plus a README section describing how comparisons are made.
 - **Style Profile Memory (+2).** A `data/style_profile.json` file. Reads are automatic, the executor loads it at session start and injects it into the `suggest_outfit` prompt like the wardrobe. Writes go through one router-visible tool, `save_style_preference(preference)`, specced as Tool 6 above. Evidence: the demo shows the save in interaction one and the recall in interaction two, from a fresh session.
-- **Trend Awareness Tool (+2).** `check_trends`, specced as Tool 5 above. Data source is a bundled `data/trends.json` snapshot styled as a fashion-platform feed, with the interface written so a live API could swap in. No external API at runtime. Evidence: demo showing trend info visibly influencing the outfit suggestion, plus a README section naming the data source.
+- **Trend Awareness Tool (+2).** `check_trends`, specced as Tool 5 above. Data source is `data/trends.json`, a snapshot of real Wikimedia Pageviews reader-interest data fetched by `utils/fetch_trends.py`. No external API at runtime, the snapshot refreshes by rerunning the script. Evidence: demo showing trend info visibly influencing the outfit suggestion, plus a README section naming the data source and methodology.
 
-[//]: # (TODO: author trends.json on build day from tags that exist in the dataset, plus a couple that don't, so the demo can show an in_stock: 0 trend not being pushed)
+[//]: # (Done 2026-06-12: trends.json fetched from Wikimedia Pageviews via utils/fetch_trends.py, tags from the dataset plus gorpcore and barbiecore which have no stock, so the demo can show an in_stock: 0 trend not being pushed)
 
 ---
 

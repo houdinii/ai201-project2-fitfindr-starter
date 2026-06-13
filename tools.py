@@ -428,9 +428,12 @@ def check_trends(
     size: str | None = None,
 ) -> list[dict]:
     """
-    Surface which styles are currently popular from the bundled
-    data/trends.json snapshot (the documented data source, interface
-    written so a live API could swap in).
+    Surface which styles are currently popular from data/trends.json,
+    a snapshot of real reader-interest data fetched from the Wikimedia
+    Pageviews API by utils/fetch_trends.py. Each trend's mentions is that
+    style article's pageviews over the most recent 30 days, momentum is
+    the 30-day views vs the prior 30 days as a ratio minus 1. Rerun the
+    script to refresh the snapshot.
 
     Args:
         category: Limit trends to one listing category, such as "tops".

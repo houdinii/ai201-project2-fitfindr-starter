@@ -376,7 +376,9 @@ def test_check_trends_returns_top5_sorted_by_mentions():
     assert len(trends) == 5
     mentions = [t["mentions"] for t in trends]
     assert mentions == sorted(mentions, reverse=True)
-    assert {"tag", "mentions", "momentum", "in_stock"} <= set(trends[0])
+    # Exactly the four specced fields. The snapshot's article and metadata
+    # keys stay in the file.
+    assert set(trends[0]) == {"tag", "mentions", "momentum", "in_stock"}
 
 
 def test_check_trends_in_stock_zero_when_size_is_none():
@@ -384,12 +386,18 @@ def test_check_trends_in_stock_zero_when_size_is_none():
 
 
 def test_check_trends_category_filter_drops_absent_tags():
-    # "ballet flats" and "coastal grandmother" appear in trends.json but on
-    # no listing, so any category filter drops them.
+    # gorpcore and barbiecore are real trends in trends.json carried by no
+    # listing, so any category filter drops them.
     tags = {t["tag"] for t in check_trends(category="tops")}
-    assert "ballet flats" not in tags
-    assert "coastal grandmother" not in tags
-    assert "y2k" in tags  # lst_002 is a y2k top
+    assert "gorpcore" not in tags
+    assert "barbiecore" not in tags
+    assert len(tags) > 0
+    # Every surviving tag is actually carried by at least one tops listing.
+    tops_tags = {
+        tag for l in load_listings() if l["category"] == "tops"
+        for tag in l["style_tags"]
+    }
+    assert tags <= tops_tags
 
 
 def test_check_trends_unknown_category_returns_empty_list():
@@ -398,13 +406,17 @@ def test_check_trends_unknown_category_returns_empty_list():
 
 def test_check_trends_size_counts_in_stock():
     trends = check_trends(category="tops", size="M")
-    y2k = next(t for t in trends if t["tag"] == "y2k")
-    expected = sum(
-        1 for l in load_listings()
-        if l["category"] == "tops" and "y2k" in l["style_tags"]
-        and tools._size_matches("M", l["size"])
-    )
-    assert y2k["in_stock"] == expected > 0
+    assert len(trends) > 0
+    # Each trend's in_stock equals an independent recount of tops listings
+    # carrying the tag and matching size M, robust to snapshot refreshes.
+    for trend in trends:
+        expected = sum(
+            1 for l in load_listings()
+            if l["category"] == "tops" and trend["tag"] in l["style_tags"]
+            and tools._size_matches("M", l["size"])
+        )
+        assert trend["in_stock"] == expected
+    assert any(t["in_stock"] > 0 for t in trends)
 
 
 def test_check_trends_missing_file_returns_empty_list(monkeypatch):

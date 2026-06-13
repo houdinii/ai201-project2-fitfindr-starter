@@ -18,6 +18,33 @@ High-value captures to grab during this project (don't let these scroll away):
 
 <!-- Entries below -->
 
+## 2026-06-12 · Trend data methodology (README §Trend Awareness, data source description)
+`python utils/fetch_trends.py`
+```
+  vintage           2904 views  momentum -9.1%
+  streetwear        5592 views  momentum -8.4%
+  cottagecore       8311 views  momentum -12.4%
+  y2k              12612 views  momentum -1.4%
+  denim            17537 views  momentum -2.7%
+  dark academia     9890 views  momentum +7.0%
+  tie-dye           7026 views  momentum +10.6%
+  gorpcore          9694 views  momentum +8.3%
+  barbiecore         121 views  momentum +9.0%
+  ... (23 trends total)
+wrote data/trends.json: 23 trends
+```
+Methodology: trends.json is a snapshot of REAL reader-interest data from the
+Wikimedia Pageviews API (official, public, no key). Each of the dataset's
+style tags maps to an English Wikipedia style article (e.g. y2k →
+Y2K_aesthetic). mentions = that article's pageviews over the most recent 30
+days, momentum = recent 30 days vs the prior 30 as a ratio minus 1. Two real
+trends with no stock in the listings (gorpcore, barbiecore) are included
+deliberately so check_trends can honestly report in_stock: 0. An earlier
+synthetic trends.json was rejected on data-integrity grounds and replaced
+with this fetch. Script committed at utils/fetch_trends.py, rerun to refresh.
+What this proves: the trend tool's data source is real, current, documented,
+and reproducible.
+
 ## 2026-06-12 · AI usage receipt (README §AI Usage)
 During `search_listings` implementation, Claude flagged that the dataset has three
 One Size variants ("One Size", "One Size (adjustable)", "One Size / Oversized") and
@@ -196,15 +223,16 @@ empty on read.
 
 === check_trends(category='tops', size='M') ===
 [
-  {"tag": "y2k", "mentions": 14200, "momentum": 0.45, "in_stock": 2},
-  {"tag": "cottagecore", "mentions": 9400, "momentum": 0.18, "in_stock": 4},
-  {"tag": "grunge", "mentions": 8600, "momentum": 0.21, "in_stock": 1},
-  {"tag": "streetwear", "mentions": 7900, "momentum": -0.05, "in_stock": 0},
-  {"tag": "vintage", "mentions": 7200, "momentum": 0.08, "in_stock": 5}
+  {"tag": "y2k", "mentions": 12612, "momentum": -0.014, "in_stock": 2},
+  {"tag": "crochet", "mentions": 11632, "momentum": -0.03, "in_stock": 1},
+  {"tag": "dark academia", "mentions": 9890, "momentum": 0.07, "in_stock": 1},
+  {"tag": "cottagecore", "mentions": 8311, "momentum": -0.124, "in_stock": 4},
+  {"tag": "goth", "mentions": 7452, "momentum": -0.009, "in_stock": 1}
 ]
 ```
 What this proves: the price assessment comes with comparable-based reasoning
 (8 comparables, tag-overlap pool), and trends narrow by category with real
-in-stock counts per size. Trend figures come from `data/trends.json`, which
-is DUMMY DATA, synthetic numbers marked as such in the file itself,
-planning.md, and the README's data source description.
+in-stock counts per size. Trend figures are REAL Wikimedia Pageviews data
+from `data/trends.json` (see the methodology entry at the top of this file).
+Re-run 2026-06-12 after the real snapshot replaced the rejected synthetic
+one. 55 tests passing against the new file shape.

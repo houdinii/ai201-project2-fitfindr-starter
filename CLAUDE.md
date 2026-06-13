@@ -53,21 +53,25 @@ Required workflow order (graded): planning.md filled BEFORE implementation code;
   propagates Groq client errors and raises `RuntimeError` on an empty LLM
   response. The executor owns catch, wait, retry once, then `session["error"]`,
   per the Error Handling table. Tools stay pure, the agent layer handles policy.
-- 2026-06-12: Trend awareness data source is a bundled `data/trends.json`
-  snapshot (tag and style frequencies formatted like a fashion-platform
-  feed), documented in the README as the data source, with the tool
-  interface written so a live API could be swapped in. No external API on
-  build day. MUST be marked as DUMMY data everywhere it's described (the
-  file's own _note, planning.md, README). The numbers are synthetic,
-  never present them as real platform data.
+- 2026-06-12 (REVISED, supersedes the dummy-data version): Trend data is
+  REAL. Brian rejected invented numbers. `data/trends.json` is a snapshot
+  fetched by `utils/fetch_trends.py` from the Wikimedia Pageviews API
+  (official, public, keyless). 23 style tags map to en.wikipedia style
+  articles. `mentions` = real pageviews over the most recent 30 days,
+  `momentum` = recent 30 days vs prior 30 days as a ratio minus 1. The
+  snapshot nests under a `trends` key with `_source`, `_fetched`, `_window`
+  metadata. Tags come from the dataset's own style_tags, plus gorpcore and
+  barbiecore which are real trends with no stock (honest `in_stock: 0`).
+  Rerun the script to refresh. NEVER fabricate data in this project.
 - 2026-06-12: `compare_prices` verdict band is the comparable median ±10%,
   item excluded from its own comparables, comp stats are `None` on
   "not enough data". The tools.py function takes the resolved listing dict,
   `item_id` is the router-visible param, per the state-by-reference design.
-- 2026-06-12: `trends.json` stores tag, mentions, momentum only. Category
-  narrowing and `in_stock` are computed against listings.json at call time,
-  size matching reuses `_size_matches`. Profile file shape is
-  `{"preferences": [...]}` with case-insensitive dedup on save.
+- 2026-06-12: `check_trends` returns only the four specced fields (tag,
+  mentions, momentum, in_stock), the snapshot's `article` and metadata keys
+  stay in the file. Category narrowing and `in_stock` are computed against
+  listings.json at call time, size matching reuses `_size_matches`. Profile
+  file shape is `{"preferences": [...]}` with case-insensitive dedup on save.
 
 ## Working with Brian (enforced by Claude every session)
 - Be decisive. Make one call, state the reason once, log it in the decision
