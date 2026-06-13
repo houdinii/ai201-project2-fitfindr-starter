@@ -38,34 +38,34 @@
 - [x] Writes file AND `session["style_profile"]`
 - [x] Author `data/trends.json` (real tags + 2 fakes)
 - [x] Implement `check_trends`
-- [ ] Test: missing trends.json → `[]`
+- [x] Test: missing trends.json → `[]`
 
 ## router (agent.py)
-- [ ] Session dict: add new fields
-- [ ] Tool schemas for Groq function calling
-- [ ] Router loop: call → validate → execute → append
-- [ ] Executor resolves `item_id` from session
-- [ ] Executor injects wardrobe / profile / trends
-- [ ] Guard: `MAX_ITERATIONS`
-- [ ] Guard: empty results → retry, drop size
-- [ ] Guard: retry 2, drop max_price
-- [ ] Guard: still empty → error, NO suggest_outfit
-- [ ] Guard: no fit card without outfit
-- [ ] Guard: empty description → ask user
-- [ ] Bad tool / bad ref → observation back to router
-- [ ] LLM failure → one retry → error
-- [ ] `python agent.py` happy path works
-- [ ] `python agent.py` ballgown path errors right
-- [ ] Paste both `tool_log`s into EVIDENCE.md
+- [x] Session dict: add new fields
+- [x] Tool schemas for Groq function calling
+- [x] Router loop: call → validate → execute → append
+- [x] Executor resolves `item_id` from session
+- [x] Executor injects wardrobe / profile / trends
+- [x] Guard: `MAX_ITERATIONS`
+- [x] Guard: empty results → retry, drop size
+- [x] Guard: retry 2, drop max_price
+- [x] Guard: still empty → error, NO suggest_outfit
+- [x] Guard: no fit card without outfit
+- [x] Guard: empty description → ask user
+- [x] Bad tool / bad ref → observation back to router
+- [x] LLM failure → one retry → error
+- [x] `python agent.py` happy path works
+- [x] `python agent.py` ballgown path errors right
+- [x] Paste both `tool_log`s into EVIDENCE.md
 
 ## failure drills
-- [ ] Terminal: trigger zero results → EVIDENCE.md
-- [ ] Terminal: trigger empty wardrobe → EVIDENCE.md
+- [x] Terminal: trigger zero results → EVIDENCE.md
+- [x] Terminal: trigger empty wardrobe → EVIDENCE.md
 - [ ] Terminal: trigger empty outfit → EVIDENCE.md
 - [ ] Screenshot one failure for the demo
 
 ## app
-- [ ] Implement `handle_query` in app.py
+- [x] Implement `handle_query` in app.py
 - [ ] `python app.py`: all 3 panels populate
 - [ ] Two-session style memory test works
 

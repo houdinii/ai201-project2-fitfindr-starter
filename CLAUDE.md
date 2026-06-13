@@ -73,6 +73,31 @@ Required workflow order (graded): planning.md filled BEFORE implementation code;
   listings.json at call time, size matching reuses `_size_matches`. Profile
   file shape is `{"preferences": [...]}` with case-insensitive dedup on save.
 
+## Open captures for the Milestone 5 + demo pass (code done, proof pending)
+These code paths are built and verified by inspection/pytest. What's left is
+the live, visible capture for EVIDENCE.md and the demo video:
+- Empty-outfit drill: passing pytest exists, but no visible error-string
+  capture in EVIDENCE.md yet (the other two drills have theirs). Run the
+  Milestone 5 one-liner and paste it.
+- Bad tool / bad ref → observation, and LLM failure → retry → error: real
+  code paths, not force-triggered live (need LLM mocking or induced failure).
+  If demoing live, overlaps the failure drills.
+- `python app.py`: handle_query returns all 3 panels populated (verified in
+  code), but the Gradio server was not launched and clicked through. Confirm
+  visually before the demo.
+- Two-session style memory: not run end to end yet. Delete style_profile.json,
+  save in session one, recall in a fresh session two (this is the stretch demo).
+
+## Watch items (revisit, not yet decided)
+- 2026-06-12: The router treats "under $X" in a query as price interest and
+  calls `compare_prices` on what looks like a plain happy path. Defensible
+  (it's an optional, non-gating tool and the price ceiling is a real signal),
+  and not a problem now. But it means the "happy path" and the price-tool
+  demo can blur together. If the demo needs a clean no-price happy path,
+  use a query with no budget mention (e.g. the graphic-tee walkthrough query
+  has "under $30", so pick a different one or steer the router via wording).
+  Revisit when scripting/recording the demo.
+
 ## Working with Brian (enforced by Claude every session)
 - Be decisive. Make one call, state the reason once, log it in the decision
   log above. Never present alternatives after a decision is made, never reopen

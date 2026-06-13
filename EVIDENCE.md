@@ -236,3 +236,82 @@ in-stock counts per size. Trend figures are REAL Wikimedia Pageviews data
 from `data/trends.json` (see the methodology entry at the top of this file).
 Re-run 2026-06-12 after the real snapshot replaced the rejected synthetic
 one. 55 tests passing against the new file shape.
+
+## 2026-06-12 · Milestone 4 planning loop: happy path AND no-results early return side by side (Planning Loop Adaptiveness 2-pt row + State Management)
+`python agent.py` (the two built-in CLI test cases), live against Groq:
+```
+=== Happy path: graphic tee ===
+
+Found: Y2K Baby Tee — Butterfly Print ($18.00, depop)
+
+Outfit: You can create a fun and casual outfit by pairing the Y2K Baby Tee with the Baggy straight-leg jeans and the Chunky white sneakers. This outfit works because the fitted crop length of the tee complements the high-waisted and baggy fit of the jeans, creating a cute and playful contrast. The chunky white sneakers add a sporty touch that fits well with the Y2K vibe of the tee.
+
+Another outfit idea is to pair the Y2K Baby Tee with the Wide-leg khaki trousers and the Black combat boots. ...
+
+Fit card: I just found the cutest Y2K Baby Tee on depop for $18.00 and I'm obsessed with how it looks paired with my baggy straight-leg jeans and chunky white sneakers - the fitted crop top and loose pants are such a great contrast. ...
+
+Tool sequence: search_listings -> compare_prices -> suggest_outfit -> create_fit_card
+Iterations: 4
+selected_item IS search_results[0]: True
+
+
+=== No-results path: impossible query ===
+
+[notice] Nothing matched for 'designer ballgown' in size XXS under $5.00, so I searched again without the size filter.
+[notice] Nothing matched for 'designer ballgown' under $5.00, so I searched again without the price cap.
+Error: No matches for 'designer ballgown' even with all filters loosened. The cheapest item in stock is $12.00. Try a different description.
+
+Tool sequence: search_listings
+Iterations: 1
+```
+What this proves: the agent behaves DIFFERENTLY for non-standard input. Happy
+path runs four tools (`search_listings -> compare_prices -> suggest_outfit ->
+create_fit_card`), the impossible query runs ONE (`search_listings`), retries
+twice with loosened filters, sets a specific actionable error, and never calls
+`suggest_outfit`. `selected_item IS search_results[0]: True` is the state-by-
+reference proof: the item search found is the exact object styled, no re-entry,
+no LLM transcription. The fit card names the same item the search returned.
+
+## 2026-06-12 · Empty/greeting query asks the user instead of searching (Planning Loop branch)
+`run_agent(query="hey", wardrobe=get_example_wardrobe())`:
+```
+error/ask: What are you looking for? You can search for something like a vintage graphic tee under $30, size M.
+tool sequence: (none)
+search called: False
+```
+What this proves: a query with nothing to search for calls no tools and asks
+the user for a real query with an example, the "nothing to search for" branch
+from the Architecture diagram.
+
+## 2026-06-12 · app.py handle_query maps the session onto the three Gradio panels
+`app.handle_query(...)` for empty guard, happy path, and no-results:
+```
+=== empty guard ===
+panel1: Please describe what you're looking for, such as 'vintage graphic tee under $30, size M'.
+panels 2/3 empty: True
+
+=== happy path ===
+LISTING PANEL:
+Y2K Baby Tee — Butterfly Print
+$18.00 on depop
+Size S/M - condition excellent
+Category: tops
+Style: y2k, vintage, graphic tee, cottagecore
+
+Super cute early 2000s baby tee with butterfly graphic. Fitted crop length. Tag says medium but fits like a small.
+
+OUTFIT non-empty: True | FIT CARD non-empty: True
+
+=== no-results ===
+PANEL1:
+Note:
+- Nothing matched for 'designer ballgown' in size XXS under $5.00, so I searched again without the size filter.
+- Nothing matched for 'designer ballgown' under $5.00, so I searched again without the price cap.
+
+No matches for 'designer ballgown' even with all filters loosened. The cheapest item in stock is $12.00. Try a different description.
+
+panels 2/3 empty: True
+```
+What this proves: the UI guards empty queries, populates all three panels on
+the happy path, and surfaces the retry notices plus the specific error on the
+no-results path. `build_interface()` constructs without error (verified same run).
