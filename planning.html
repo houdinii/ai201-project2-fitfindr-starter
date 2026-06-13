@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FitFindr · Planning Spec</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #2a2d31;
+  --bg-deep: #232629;
+  --panel: #313539;
+  --panel-2: #383d42;
+  --ink: #d9dcdf;
+  --ink-dim: #9aa1a8;
+  --ivory: #f0ece4;
+  --brass: #cfa368;
+  --brass-dim: #a98a5e;
+  --sage: #a3b89a;
+  --rust: #c98a7d;
+  --line: #43484e;
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 2rem; }
+body {
+  margin: 0;
+  background:
+    radial-gradient(1200px 600px at 85% -10%, #33373c 0%, transparent 60%),
+    var(--bg);
+  color: var(--ink);
+  font: 400 17px/1.75 "Source Sans 3", sans-serif;
+}
+/* ── masthead ── */
+.masthead {
+  border-bottom: 1px solid var(--line);
+  padding: 4.5rem 2rem 3rem;
+  background: linear-gradient(180deg, var(--bg-deep), transparent);
+}
+.masthead .in { max-width: 1180px; margin: 0 auto; }
+.kicker {
+  font: 500 .72rem/1 var(--mono);
+  letter-spacing: .28em; text-transform: uppercase;
+  color: var(--brass);
+}
+.masthead h1 {
+  font: 600 clamp(2.6rem, 6vw, 4.2rem)/1.05 "Fraunces", serif;
+  color: var(--ivory); margin: .35rem 0 .8rem;
+  letter-spacing: -.01em;
+}
+.masthead h1 em { font-style: italic; color: var(--brass); }
+.sub { max-width: 56ch; color: var(--ink-dim); font-size: 1.05rem; }
+.meta {
+  display: flex; gap: 2.2rem; margin-top: 1.6rem; flex-wrap: wrap;
+  font: 400 .8rem/1.5 var(--mono); color: var(--ink-dim);
+}
+.meta b { display: block; color: var(--ivory); font-weight: 500; font-size: .92rem; }
+/* ── layout ── */
+.wrap { max-width: 1180px; margin: 0 auto; padding: 2rem;
+        display: grid; grid-template-columns: 200px minmax(0,1fr); gap: 3.5rem; }
+nav.toc { position: sticky; top: 2rem; align-self: start;
+          display: flex; flex-direction: column; gap: .15rem; padding-top: 2.4rem; }
+nav.toc a {
+  color: var(--ink-dim); text-decoration: none;
+  font: 400 .82rem/1.4 var(--mono); padding: .42rem .6rem;
+  border-left: 2px solid var(--line); transition: all .15s;
+}
+nav.toc a span { color: var(--brass-dim); margin-right: .55em; font-size: .72rem; }
+nav.toc a:hover { color: var(--ivory); border-left-color: var(--brass); }
+main { min-width: 0; }
+/* ── sections ── */
+section { position: relative; padding: 2.4rem 0 1rem; }
+section + section { border-top: 1px solid var(--line); margin-top: 2rem; }
+section::before {
+  content: var(--n);
+  position: absolute; top: 1.1rem; right: 0;
+  font: 700 5.5rem/1 "Fraunces", serif;
+  color: var(--ivory); opacity: .045; pointer-events: none;
+}
+h2 {
+  font: 600 2rem/1.2 "Fraunces", serif;
+  color: var(--ivory); margin: 0 0 .4rem;
+}
+.lede { color: var(--ink-dim); font-size: 1.02rem; max-width: 60ch;
+        margin-top: 0; font-style: italic; }
+h3 { font: 600 1.25rem/1.3 "Fraunces", serif; color: var(--ivory); }
+p { max-width: 72ch; }
+ul { max-width: 70ch; padding-left: 1.2rem; }
+li { margin: .3rem 0; }
+li::marker { color: var(--brass); }
+strong { color: var(--ivory); font-weight: 600; }
+/* code: a whisper, not a chip */
+code {
+  font: 500 .88em/1 var(--mono);
+  color: var(--sage);
+  background: none; padding: 0;
+}
+blockquote.query {
+  font: italic 500 1.25rem/1.5 "Fraunces", serif;
+  color: var(--ivory);
+  border-left: 3px solid var(--brass);
+  margin: 1.4rem 0; padding: .4rem 0 .4rem 1.2rem; max-width: 60ch;
+}
+/* ── tool cards ── */
+.tool {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 1.5rem 1.8rem 1.2rem;
+  margin: 1.4rem 0;
+}
+.tool header {
+  display: flex; align-items: baseline; gap: .9rem;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: .8rem; margin-bottom: .9rem;
+}
+.tnum { font: 600 .9rem/1 var(--mono); color: var(--brass-dim); }
+.tool h3 { margin: 0; font: 500 1.3rem/1 var(--mono); color: var(--ivory); letter-spacing: -.02em; }
+.badge {
+  margin-left: auto;
+  font: 500 .66rem/1 var(--mono); letter-spacing: .14em; text-transform: uppercase;
+  padding: .35em .7em; border-radius: 99px; border: 1px solid;
+}
+.badge.local { color: var(--sage); border-color: color-mix(in srgb, var(--sage) 45%, transparent); }
+.badge.llm { color: var(--brass); border-color: color-mix(in srgb, var(--brass) 45%, transparent); }
+.badge.file { color: var(--rust); border-color: color-mix(in srgb, var(--rust) 45%, transparent); }
+.tfield { margin: 1rem 0; }
+.tfield h4 {
+  font: 500 .68rem/1 var(--mono); letter-spacing: .22em; text-transform: uppercase;
+  color: var(--brass-dim); margin: 0 0 .35rem;
+}
+.tfield p { margin: .35rem 0; }
+.tfield.fail { border-left: 2px solid var(--rust); padding-left: 1rem; }
+.tfield.fail h4 { color: var(--rust); }
+/* params table */
+table.params {
+  width: 100%; border-collapse: collapse; margin: .5rem 0 .8rem;
+  font-size: .92rem;
+}
+table.params th {
+  font: 500 .65rem/1 var(--mono); letter-spacing: .18em; text-transform: uppercase;
+  color: var(--ink-dim); text-align: left;
+  padding: .4rem .8rem .4rem 0; border-bottom: 1px solid var(--line);
+}
+table.params td { padding: .5rem .8rem .5rem 0; border-bottom: 1px solid color-mix(in srgb, var(--line) 50%, transparent); vertical-align: top; }
+td.pname { font: 500 .86rem/1.5 var(--mono); color: var(--ivory); white-space: nowrap; }
+td.ptype { font: 400 .8rem/1.6 var(--mono); color: var(--brass-dim); white-space: nowrap; }
+details.datanotes {
+  margin: 1.1rem 0 .3rem; border: 1px dashed var(--line);
+  border-radius: 8px; padding: .7rem 1.1rem;
+  background: var(--bg-deep); font-size: .92rem;
+}
+details.datanotes summary {
+  cursor: pointer; color: var(--ink-dim);
+  font: 500 .78rem/1.4 var(--mono); letter-spacing: .06em;
+}
+details.datanotes h4 { color: var(--brass-dim); font: 600 .9rem/1.4 "Source Sans 3", sans-serif; margin: .9rem 0 .2rem; }
+details.datanotes p { margin: .2rem 0; color: var(--ink-dim); }
+/* ── error cards ── */
+.egrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 1rem; margin-top: 1.4rem; }
+.ecard {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+  padding: 1.1rem 1.3rem; font-size: .93rem;
+}
+.ecard.soft { border-top: 3px solid var(--brass); }
+.ecard.hard { border-top: 3px solid var(--rust); }
+.ehead { display: flex; align-items: center; justify-content: space-between; gap: .8rem; }
+.ecomp { font: 500 .85rem/1.4 var(--mono); color: var(--ivory); }
+.etag { font: 500 .6rem/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; }
+.ecard.soft .etag { color: var(--brass); }
+.ecard.hard .etag { color: var(--rust); }
+.emode { color: var(--ivory); font-weight: 600; margin: .55rem 0 .3rem; }
+.eresp { color: var(--ink-dim); margin: 0; }
+/* ── stretch cards ── */
+.sgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 1rem; margin-top: 1.2rem; }
+.scard { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 1.1rem 1.3rem; font-size: .94rem; }
+.shead { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+.scard h4 { margin: 0; font: 600 1.05rem/1.3 "Fraunces", serif; color: var(--ivory); }
+.pts { font: 600 .8rem/1 var(--mono); color: var(--brass); white-space: nowrap; }
+.scard p { color: var(--ink-dim); margin: .5rem 0 0; }
+/* ── diagrams ── */
+figure.diagram { margin: 1.6rem 0; }
+figure.diagram figcaption {
+  font: 500 .7rem/1 var(--mono); letter-spacing: .2em; text-transform: uppercase;
+  color: var(--brass-dim); margin-bottom: .6rem;
+}
+pre.mermaid {
+  background: var(--bg-deep); border: 1px solid var(--line);
+  border-radius: 10px; padding: 1.2rem; text-align: center; overflow-x: auto;
+}
+img { max-width: 100%; border-radius: 8px; }
+/* ── milestones ── */
+.milestone { border-left: 2px solid var(--line); padding-left: 1.4rem; margin: 1.6rem 0; }
+.milestone h3 { margin: 0 0 .5rem; }
+/* ── timeline ── */
+ol.timeline { list-style: none; padding: 0; margin: 1.6rem 0; position: relative; }
+ol.timeline::before {
+  content: ""; position: absolute; left: 17px; top: 8px; bottom: 8px;
+  width: 1px; background: var(--line);
+}
+ol.timeline li { display: flex; gap: 1.3rem; margin: 1.3rem 0; position: relative; }
+.tmark {
+  flex: 0 0 36px; height: 36px; border-radius: 50%;
+  background: var(--panel-2); border: 1px solid var(--line);
+  display: grid; place-items: center;
+  font: 600 .85rem/1 var(--mono); color: var(--brass);
+  position: relative; z-index: 1;
+}
+ol.timeline h4 {
+  margin: .35rem 0 .25rem;
+  font: 500 .7rem/1 var(--mono); letter-spacing: .22em; text-transform: uppercase;
+  color: var(--brass-dim);
+}
+ol.timeline p { margin: .25rem 0; font-size: .96rem; }
+/* ── responsive + entrance ── */
+@media (max-width: 1000px) {
+  .wrap { grid-template-columns: 1fr; gap: 0; }
+  nav.toc { position: static; flex-direction: row; flex-wrap: wrap; padding: 1rem 0 0; }
+  nav.toc a { border-left: none; border-bottom: 2px solid var(--line); }
+  section::before { display: none; }
+}
+@keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.masthead .in > * { animation: rise .6s cubic-bezier(.2,.7,.3,1) backwards; }
+.masthead .in > *:nth-child(2) { animation-delay: .08s; }
+.masthead .in > *:nth-child(3) { animation-delay: .16s; }
+.masthead .in > *:nth-child(4) { animation-delay: .24s; }
+</style>
+</head>
+<body>
+<header class="masthead">
+  <div class="in">
+    <div class="kicker">AI201 · Project 2 · Planning Specification</div>
+    <h1>FitFindr <em>agent spec</em></h1>
+    <p class="sub">A multi-tool thrifting agent: a ReAct-style LLM router bounded by
+    hard code guards, six tools, one session dict as the single source of truth.
+    Written before implementation. The spec is the prompt.</p>
+    <div class="meta">
+      <div><b>6 tools</b>3 required · 3 stretch</div>
+      <div><b>llama-3.3-70b</b>via Groq</div>
+      <div><b>+7 stretch pts</b>all committed</div>
+      <div><b>router + guards</b>LLM proposes, code disposes</div>
+    </div>
+  </div>
+</header>
+<div class="wrap">
+<nav class="toc"><a href="#tools"><span>01</span>Tools</a><a href="#loop"><span>02</span>Planning Loop</a><a href="#state"><span>03</span>State Management</a><a href="#errors"><span>04</span>Error Handling</a><a href="#stretch"><span>05</span>Stretch Features</a><a href="#arch"><span>06</span>Architecture</a><a href="#plan"><span>07</span>AI Tool Plan</a><a href="#walk"><span>08</span>Complete Interaction</a></nav>
+<main>
+<section id="tools" style="--n:'01'"><h2>Tools</h2><p class="lede">Six tools. Three required, three stretch. The router only ever sees each tool's name, input signature, and output type.</p><article class="tool" id="tool-search_listings">
+<header><span class="tnum">01</span><h3>search_listings</h3><span class="badge local">pure local</span></header>
+<div class="tfield"><h4>What it does</h4><p>The <code>search_listings</code> tool searches the listings data for items matching the given criteria. It returns a list of matching items, sorted by relevance score, best match first.</p>
+<p>Scoring is a keyword overlap. Each listing's <code>title</code>, <code>description</code>, <code>style_tags</code>, <code>colors</code>, <code>category</code>, and <code>brand</code> are joined into one lowercase haystack string, and the score is the count of query words that hit. <code>brand</code> may be <code>null</code> and is skipped when missing. Listings with a score of 0 are dropped.</p>
+<p>Size matching is case-insensitive and token-based. The listing's size string is split on <code>/</code>, spaces, and parentheses, and the requested size must equal one of the tokens, so "M" matches "S/M" and "M/L" but "L" does not match "XL". Listings marked "One Size" match any requested size. Sizes span letter sizes, shoe sizes ("US 8"), and waist sizes ("W30"). Matching is string-based, no numeric conversion.</p>
+<p>If nothing is found, the tool returns an empty list.</p></div>
+<div class="tfield"><h4>Inputs</h4>
+<table class="params"><thead><tr><th>parameter</th><th>type</th><th>meaning</th></tr></thead><tbody><tr><td class="pname">description</td><td class="ptype">str</td><td>A description of the item to search for.</td></tr><tr><td class="pname">size</td><td class="ptype">str | None</td><td>The size of the item to search for.</td></tr><tr><td class="pname">max_price</td><td class="ptype">float | None</td><td>The maximum price of the item to search for.</td></tr></tbody></table>
+</div>
+<div class="tfield"><h4>Returns</h4>
+<p>A list of dictionaries, each representing a matching item. Each dictionary contains the following fields:</p>
+<table class="params"><thead><tr><th>field</th><th>type</th><th>description</th></tr></thead><tbody><tr><td class="pname">id</td><td class="ptype">str</td><td>Unique identifier for the item, such as "lst_040"</td></tr><tr><td class="pname">title</td><td class="ptype">str</td><td>The title of the item.</td></tr><tr><td class="pname">description</td><td class="ptype">str</td><td>A short description of the item, listing features such as colors and style .</td></tr><tr><td class="pname">category</td><td class="ptype">str</td><td>The category of the item, such as "tops" or "accessories"</td></tr><tr><td class="pname">style_tags</td><td class="ptype">list[str]</td><td>Tags describing the item's style, such as "vintage" and "cottagecore"</td></tr><tr><td class="pname">size</td><td class="ptype">str</td><td>String representation of the item's size, such as "L/XL"</td></tr><tr><td class="pname">condition</td><td class="ptype">str</td><td>string representation of the item's condition,</td></tr><tr><td class="pname">price</td><td class="ptype">float</td><td>The price of the item.</td></tr><tr><td class="pname">colors</td><td class="ptype">list[str]</td><td>A list of strings representing the item's colors.</td></tr><tr><td class="pname">brand</td><td class="ptype">str | null</td><td>The brand of the item, such as "Levi's" or <code>null</code> if unknown.</td></tr><tr><td class="pname">platform</td><td class="ptype">str</td><td>The platform the item is available on, such as "depop", "thredUp", or "poshmark"</td></tr></tbody></table>
+</div>
+<div class="tfield fail"><h4>On failure</h4><p>An empty list is returned if no items match the criteria. There is nothing else to handle. <code>search_listings</code> makes no LLM or network calls, it is pure local computation over <code>listings.json</code>. The only other failure is the data file being missing or corrupt, which kills the app at startup, not mid-session. The agent-level response to an empty list is the two-stage retry described in the Planning Loop and Error Handling sections.</p></div>
+<details class="datanotes"><summary>Data notes (field profiles &amp; traps from exploring the dataset)</summary><h4>Breakdown of Listings</h4><p> id:           lst_001…lst_040, all unique</p><p> title:        Unique short names, no duplicates</p><p> description:  95–141 chars, never empty — the richest text for keyword scoring</p><p> category:     Exactly the 5 the README claims: tops 15, bottoms 10, outerwear 8, shoes 4, accessories 3</p><p> style_tags:   List of 4–5 per listing, 45 distinct, all lowercase. Top: vintage (29), classic (16), streetwear (15), earth tones (11), cottagecore (9), grunge (8), 90s (8), y2k (7)</p><p> size:         The 22-format zoo we covered (letters, combos, US shoe, waist)</p><p> condition:    Only good (19) / excellent (17) / fair (4)</p><p> price:        All floats, $12.00–$75.00</p><p> colors:       List per listing, 38 distinct, lowercase, includes multi-word ("forest green", "faded black")</p><p> brand:        32/40 null (covered earlier)</p><p> platform:     depop (18), thredUp (11), poshmark (11)</p><h4>Breakdown of Wardrobe Items</h4><p> schema — wardrobe items have exactly: id, name, category (same 5 values), colors (list), style_tags (list), notes (optional string).</p><p> example_wardrobe — 10 items, deliberately curated to pair with the listings: baggy dark-wash jeans, chunky white sneakers, black combat boots, denim jacket… your demo query ("baggy jeans and chunky sneakers") maps directly onto w_001 and w_007. The suggest_outfit prompt should name</p><p>these pieces.</p><p> empty_wardrobe — {"items": []} plus a _note key. Code should only ever touch items.</p><p>Two traps here:</p><p> notes is null on 5 of 10 items — with the same None-guard issue as brand. When formatting wardrobe items into the LLM prompt, we should skip or default null notes.</p><p> Wardrobe items have no size or price — so suggest_outfit's prompt is built from name/category/colors/tags/notes only. We shouldn't spec fields that don't exist.</p><p></p></details>
+</article><article class="tool" id="tool-suggest_outfit">
+<header><span class="tnum">02</span><h3>suggest_outfit</h3><span class="badge llm">LLM call</span></header>
+<div class="tfield"><h4>What it does</h4><p>Suggests 1-2 complete outfits based on a user's wardrobe and a thrifted item they're looking for.</p></div>
+<div class="tfield"><h4>Inputs</h4>
+<table class="params"><thead><tr><th>parameter</th><th>type</th><th>meaning</th></tr></thead><tbody><tr><td class="pname">new_item</td><td class="ptype">dict</td><td>A listing dictionary describing the item the user is looking for.</td></tr><tr><td class="pname">wardrobe</td><td class="ptype">dict</td><td>A dictionary representing the user's wardrobe.</td></tr><tr><td class="pname">style_profile</td><td class="ptype">list[str] | None, optional</td><td>Saved preferences loaded from <code>data/style_profile.json</code>, injected by the executor when present (stretch: Style Profile Memory).</td></tr><tr><td class="pname">trends</td><td class="ptype">list[dict] | None, optional</td><td>Trend data from <code>check_trends</code>, injected by the executor when available (stretch: Trend Awareness). Both optional parameters default to <code>None</code> and the prompt simply omits them when absent.</td></tr></tbody></table>
+</div>
+<div class="tfield"><h4>Returns</h4>
+<p>The tool returns a non-empty string representing the suggested outfit. If the wardrobe is empty, the tool returns general styling advice for the item instead.</p>
+</div>
+<div class="tfield fail"><h4>On failure</h4><p>If the wardrobe is empty (wardrobe['items'] is []), the tool does not fail — it prompts the LLM for general styling advice for the item instead of wardrobe-specific outfits, and the agent continues to create_fit_card.</p>
+<p>If the LLM call errors or returns an empty string, the tool returns/raises a detectable failure, the agent sets session["error"] to a message naming the item and suggesting a retry, and ends the interaction early without calling create_fit_card.</p></div>
+
+</article><article class="tool" id="tool-create_fit_card">
+<header><span class="tnum">03</span><h3>create_fit_card</h3><span class="badge llm">LLM call</span></header>
+<div class="tfield"><h4>What it does</h4><p>Generates a short, shareable outfit caption for the thrifted item.</p></div>
+<div class="tfield"><h4>Inputs</h4>
+<table class="params"><thead><tr><th>parameter</th><th>type</th><th>meaning</th></tr></thead><tbody><tr><td class="pname">outfit</td><td class="ptype">str</td><td>The outfit suggestion string returned by <code>suggest_outfit()</code></td></tr><tr><td class="pname">new_item</td><td class="ptype">dict</td><td>The listing dictionary for the thrifted item. (See breakdown above in <code>search_listings()</code>)</td></tr></tbody></table>
+</div>
+<div class="tfield"><h4>Returns</h4>
+<p>The tool returns a string of 2-4 sentences in the style of an Instagram/TikTok caption, mentioning the item name, price, and platform once each. Output varies run to run for the same input, enforced with a higher LLM temperature.</p>
+</div>
+<div class="tfield fail"><h4>On failure</h4><p>If an outfit is missing or empty, a descriptive error message string is returned, but will not throw an exception.</p>
+<p>If the LLM call itself errors, the tool returns a detectable failure the same way <code>suggest_outfit</code> does. The agent sets <code>session["error"]</code> but still shows the outfit suggestion, so the user keeps the styling work even when the caption fails.</p></div>
+
+</article><article class="tool" id="tool-compare_prices">
+<header><span class="tnum">04</span><h3>compare_prices</h3><span class="badge local">pure local</span></header>
+<div class="tfield"><h4>What it does</h4><p>Given an item, it estimates whether the price is fair based on comparable listings in the dataset. Comparables are listings in the same <code>category</code> that share at least one <code>style_tag</code> with the item. If that yields fewer than 3, it falls back to the whole category. The item's price is placed against the comparable price range to produce a verdict. Pure local computation, no LLM call.</p></div>
+<div class="tfield"><h4>Inputs</h4>
+<table class="params"><thead><tr><th>parameter</th><th>type</th><th>meaning</th></tr></thead><tbody><tr><td class="pname">item_id</td><td class="ptype">str</td><td>The id of the listing to assess, such as "lst_017". The executor resolves it to the full listing dict from <code>session["search_results"]</code>.</td></tr></tbody></table>
+</div>
+<div class="tfield"><h4>Returns</h4>
+<p>A dict containing:</p>
+<table class="params"><thead><tr><th>field</th><th>type</th><th>description</th></tr></thead><tbody><tr><td class="pname">verdict</td><td class="ptype">str</td><td>One of "below market", "fair", or "above market"</td></tr><tr><td class="pname">item_price</td><td class="ptype">float</td><td>The price of the assessed item</td></tr><tr><td class="pname">comparable_count</td><td class="ptype">int</td><td>How many comparables the verdict is based on</td></tr><tr><td class="pname">comp_min / comp_median / comp_max</td><td class="ptype">float</td><td>Price stats across the comparables</td></tr><tr><td class="pname">reasoning</td><td class="ptype">str</td><td>One human-readable sentence, such as "At $22 this band tee sits below the $28 median of 6 comparable vintage tops."</td></tr></tbody></table>
+</div>
+<div class="tfield fail"><h4>On failure</h4><p>If fewer than 3 comparables exist even after the category fallback, the verdict is "not enough data" and <code>reasoning</code> says so. The agent relays that price fairness couldn't be assessed for this item and continues the flow. This tool never blocks the core chain.</p></div>
+
+</article><article class="tool" id="tool-check_trends">
+<header><span class="tnum">05</span><h3>check_trends</h3><span class="badge file">local file</span></header>
+<div class="tfield"><h4>What it does</h4><p>Surfaces which styles are currently popular by reading <code>data/trends.json</code>, a bundled snapshot of tag activity styled as a fashion-platform feed (the documented data source, with the interface written so a live API could swap in). Results can be narrowed to a category and cross-referenced against the user's size so trends are only surfaced when something matching is actually in stock.</p></div>
+<div class="tfield"><h4>Inputs</h4>
+<table class="params"><thead><tr><th>parameter</th><th>type</th><th>meaning</th></tr></thead><tbody><tr><td class="pname">category</td><td class="ptype">str | None</td><td>Limit trends to one listing category, such as "tops". <code>None</code> returns trends across all categories.</td></tr><tr><td class="pname">size</td><td class="ptype">str | None</td><td>The user's size. When provided, each trend reports how many in-stock listings match both the trend and the size. <code>None</code> skips the stock check.</td></tr></tbody></table>
+</div>
+<div class="tfield"><h4>Returns</h4>
+<p>A list of up to 5 trend dicts, sorted by popularity. Each contains:</p>
+<table class="params"><thead><tr><th>field</th><th>type</th><th>description</th></tr></thead><tbody><tr><td class="pname">tag</td><td class="ptype">str</td><td>The trending style tag, such as "gorpcore" or "cottagecore"</td></tr><tr><td class="pname">mentions</td><td class="ptype">int</td><td>Post count for the tag in the snapshot week</td></tr><tr><td class="pname">momentum</td><td class="ptype">float</td><td>Week-over-week change, such as 0.4 for up 40 percent</td></tr><tr><td class="pname">in_stock</td><td class="ptype">int</td><td>Number of listings carrying this tag that match the user's size, <code>0</code> if <code>size</code> was <code>None</code></td></tr></tbody></table>
+</div>
+<div class="tfield fail"><h4>On failure</h4><p>Trend data is flavor, never load-bearing. If <code>trends.json</code> is missing or unreadable, or no trends match the category, the tool returns an empty list and the agent proceeds with a normal outfit suggestion, noting that trend data was unavailable. This tool never blocks the core flow.</p></div>
+
+</article><article class="tool" id="tool-save_style_preference">
+<header><span class="tnum">06</span><h3>save_style_preference</h3><span class="badge file">writes disk</span></header>
+<div class="tfield"><h4>What it does</h4><p>Persists a style preference the user states during a conversation, appending it to <code>data/style_profile.json</code> (stretch: Style Profile Memory). The router calls it when the user expresses a durable taste, such as "I'm really into grunge lately" or "never show me pink." Saving is the only tool. Reading is automatic, the executor loads the profile at session start and injects it into the <code>suggest_outfit</code> prompt the same way it injects the wardrobe.</p></div>
+<div class="tfield"><h4>Inputs</h4>
+<table class="params"><thead><tr><th>parameter</th><th>type</th><th>meaning</th></tr></thead><tbody><tr><td class="pname">preference</td><td class="ptype">str</td><td>A short preference statement, such as "loves grunge" or "dislikes pink".</td></tr></tbody></table>
+</div>
+<div class="tfield"><h4>Returns</h4>
+<p>The updated list of saved preferences (<code>list[str]</code>), so the router can confirm to the user what is now remembered.</p>
+</div>
+<div class="tfield fail"><h4>On failure</h4><p>If the file cannot be written, the tool returns a descriptive error string instead of raising. The agent tells the user the preference couldn't be saved this time and continues the session normally. A failed write never affects the current interaction. On the read side, if <code>style_profile.json</code> is corrupt or unreadable at session start, the executor treats it as an empty profile and continues.</p></div>
+
+</article></section>
+<section id="loop" style="--n:'02'"><h2>Planning Loop</h2><p class="lede">A ReAct-style router loop. The LLM proposes, the guards dispose.</p><p>The agent is a ReAct-style router loop. Each iteration, the LLM receives the tool descriptions (name, input signature, output type), the conversation so far, and the session state, and chooses the next tool call or signals that it's finished. Tool results are appended to the session and fed back in.</p>
+<p>The router's choices are bounded by hard guards in code, starting with a <code>MAX_ITERATIONS</code> cap. If <code>search_listings</code> returns an empty list, the router retries up to two times, first with the <code>size</code> filter removed, then with the <code>max_price</code> cap removed, telling the user what was adjusted each time (stretch feature: Retry Logic with Fallback). If the retries also return nothing, the loop blocks any call to <code>suggest_outfit</code>, sets <code>session["error"]</code> to a message naming what was tried and what to change, and exits.</p>
+<p>The three optional tools never gate the core chain. After a successful search, the router may call <code>compare_prices</code> (when the query asks about price or worth) and <code>check_trends</code> (to enrich the suggestion). <code>save_style_preference</code> fires whenever the user states a durable taste. Results from all three land in the session, and the executor folds the style profile and trend data into the <code>suggest_outfit</code> prompt.</p>
+<p>The loop terminates when <code>fit_card</code> is set (success) or <code>error</code> is set (early exit). Query understanding happens in the same router call when the LLM extracts <code>description</code>/<code>size</code>/<code>max_price</code> for <code>search_listings</code> itself, passing <code>None</code> for anything the user didn't mention, and <code>search_listings</code> skips <code>None</code> filters.</p></section>
+<section id="state" style="--n:'03'"><h2>State Management</h2><p class="lede">The session dict is the single source of truth. The LLM routes, the session carries.</p><p>There are two layers to the state. The first is the session state, found in <code>_new_session()</code> containing:</p><table class="params"><thead><tr><th>session key</th><th>type</th><th>holds</th></tr></thead><tbody><tr><td class="pname">query</td><td class="ptype">str</td><td>The user's query.</td></tr><tr><td class="pname">parsed</td><td class="ptype">dict</td><td>parsed query from LLM</td></tr><tr><td class="pname">search_results</td><td class="ptype">list[dict]</td><td>List of matching listings.</td></tr><tr><td class="pname">selected_item</td><td class="ptype">dict</td><td>The item the user selected from the search results.</td></tr><tr><td class="pname">wardrobe</td><td class="ptype">dict</td><td>The user's wardrobe.</td></tr><tr><td class="pname">style_profile</td><td class="ptype">list[str]</td><td>Saved preferences loaded from <code>data/style_profile.json</code> at session start.</td></tr><tr><td class="pname">trends</td><td class="ptype">list[dict]</td><td>Trend data returned by <code>check_trends</code>, empty until called.</td></tr><tr><td class="pname">price_assessment</td><td class="ptype">dict | None</td><td>The verdict returned by <code>compare_prices</code>, <code>None</code> until called.</td></tr><tr><td class="pname">outfit_suggestion</td><td class="ptype">str</td><td>The outfit suggestion string returned by <code>suggest_outfit()</code>.</td></tr><tr><td class="pname">fit_card</td><td class="ptype">str</td><td>The outfit caption string returned by <code>create_fit_card()</code>.</td></tr><tr><td class="pname">error</td><td class="ptype">str</td><td>If an error occurs, this is set to a message describing the error.</td></tr><tr><td class="pname">iterations</td><td class="ptype">int</td><td>Router iteration counter, checked against <code>MAX_ITERATIONS</code>.</td></tr><tr><td class="pname">tool_log</td><td class="ptype">list</td><td>Record of tool calls made, for debugging and the demo.</td></tr></tbody></table>
+<p>Every tool call updates the session state. The second layer is the router's message history. Tool results are summarized back into the conversation so the LLM can see what came back and choose the next move, but heavy objects stay in the session.</p>
+<p>State passes between tools through the session, not through the LLM:</p>
+<ul><li>the router selects tools and supplies only lightweight references (e.g., item_id: "lst_017")</li><li>the executor layer resolves those references against the session and injects the full objects</li></ul>
+<p>The actual listing dict comes from <code>session["search_results"]</code>, the wardrobe from <code>session["wardrobe"]</code>, the outfit string from <code>session["outfit_suggestion"]</code>. Heavy data never round-trips through the LLM, so the item returned by <code>search_listings</code> is guaranteed to be the same object passed into <code>suggest_outfit</code>, with no re-entry by the user and no transcription by the model.</p>
+<p>The session is also what the guard conditions read: empty <code>search_results</code> blocks <code>suggest_outfit</code> and sets <code>error</code>. A populated <code>fit_card</code> ends the loop.</p>
+<p>The only state that survives a session is <code>data/style_profile.json</code>. Everything else lives in the session dict and dies with it.</p></section>
+<section id="errors" style="--n:'04'"><h2>Error Handling</h2><p class="lede">Every failure is classified: amber degrades and continues, red stops with a specific, actionable error.</p><div class="egrid"><div class="ecard hard"><div class="ehead"><span class="ecomp">search_listings</span><span class="etag">stop with error</span></div><p class="emode">No results match the query</p><p class="eresp">The agent retries automatically, up to twice, loosening one filter at a time. The first retry removes the <code>size</code> filter, the second removes the <code>max_price</code> cap. Each retry tells the user what was adjusted, such as "Nothing matched in size XXS under \$5, so I searched again without the size filter." If all retries return nothing, the agent exits with a specific message, such as "No matches for 'designer ballgown' even with all filters loosened. The cheapest item in stock is $12. Try a different description." <code>suggest_outfit</code> is never called with empty results.</p></div><div class="ecard soft"><div class="ehead"><span class="ecomp">suggest_outfit</span><span class="etag">degrade &amp; continue</span></div><p class="emode">Wardrobe is empty</p><p class="eresp">The agent will respond with general styling advice and continue. For instance, 'A navy blue hat as you described will go great with solid colors, especially something lighter like white'</p></div><div class="ecard hard"><div class="ehead"><span class="ecomp">create_fit_card</span><span class="etag">stop with error</span></div><p class="emode">Outfit input is missing or incomplete</p><p class="eresp">The guard prevents this case. <code>create_fit_card</code> is only callable when <code>session["outfit_suggestion"]</code> is a non-empty string. If it is somehow called without one, the tool returns a descriptive error string instead of raising an exception. The agent then sets <code>session["error"]</code> and tells the user, "I found your item and styled it, but couldn't generate the caption. Here is the outfit suggestion, and you can re-run for a fit card."</p></div><div class="ecard soft"><div class="ehead"><span class="ecomp">compare_prices</span><span class="etag">degrade &amp; continue</span></div><p class="emode">Fewer than 3 comparable listings</p><p class="eresp">The verdict comes back "not enough data" with <code>reasoning</code> saying so. The agent relays that price fairness couldn't be assessed for this item and continues the flow normally.</p></div><div class="ecard hard"><div class="ehead"><span class="ecomp">check_trends</span><span class="etag">stop with error</span></div><p class="emode"><code>trends.json</code> missing, unreadable, or no matching trends</p><p class="eresp">The tool returns an empty list. The agent proceeds with a normal outfit suggestion and notes that trend data was unavailable. Never blocks the core flow.</p></div><div class="ecard soft"><div class="ehead"><span class="ecomp">save_style_preference</span><span class="etag">degrade &amp; continue</span></div><p class="emode">Profile file cannot be written</p><p class="eresp">The tool returns a descriptive error string instead of raising. The agent tells the user the preference couldn't be saved this time and continues the session.</p></div><div class="ecard hard"><div class="ehead"><span class="ecomp">router / executor</span><span class="etag">stop with error</span></div><p class="emode">Any LLM call fails (Groq error, timeout, or rate limit). Applies to the router, <code>suggest_outfit</code>, and <code>create_fit_card</code></p><p class="eresp">Catch, wait briefly, retry once. If it still fails, set <code>session["error"]</code> to "The styling service is busy, try again in a moment" and preserve whatever the session already holds, such as search results or an outfit.</p></div><div class="ecard soft"><div class="ehead"><span class="ecomp">router / executor</span><span class="etag">degrade &amp; continue</span></div><p class="emode">Router names a tool that doesn't exist or supplies a bad reference, such as an <code>item_id</code> not in <code>search_results</code></p><p class="eresp">The executor validates every call before running it. Invalid calls are never executed. The error is fed back into the conversation as an observation so the router can self-correct on the next iteration. The failed attempt still counts toward <code>MAX_ITERATIONS</code>.</p></div><div class="ecard hard"><div class="ehead"><span class="ecomp">router / executor</span><span class="etag">stop with error</span></div><p class="emode"><code>MAX_ITERATIONS</code> exhausted without <code>fit_card</code> or <code>error</code> set</p><p class="eresp">Exit with an error message saying what was accomplished, and show partial results. If an outfit exists but no caption, the user still gets the outfit.</p></div><div class="ecard soft"><div class="ehead"><span class="ecomp">router / executor</span><span class="etag">degrade &amp; continue</span></div><p class="emode">Parsed <code>description</code> is empty, the query has nothing to search for (such as "hey")</p><p class="eresp"><code>search_listings</code> is never called. The agent asks what the user is looking for and gives an example query.</p></div></div></section>
+<section id="stretch" style="--n:'05'"><h2>Stretch Features</h2><p>All four stretch features are committed. Each one ships as implement, demonstrate, and document in one unit.</p><div class="sgrid"><div class="scard"><div class="shead"><h4>Retry Logic with Fallback</h4><span class="pts">+1</span></div><p>On zero results the router retries up to twice, loosening one constraint at a time, <code>size</code> first, then <code>max_price</code>, telling the user what was adjusted each time. Hard cap via <code>MAX_ITERATIONS</code>. Canonical in the Planning Loop section above.</p></div><div class="scard"><div class="shead"><h4>Price Comparison Tool</h4><span class="pts">+2</span></div><p><code>compare_prices</code>, specced as Tool 4 above. Evidence: demo or source showing an assessment with reasoning, plus a README section describing how comparisons are made.</p></div><div class="scard"><div class="shead"><h4>Style Profile Memory</h4><span class="pts">+2</span></div><p>A <code>data/style_profile.json</code> file. Reads are automatic, the executor loads it at session start and injects it into the <code>suggest_outfit</code> prompt like the wardrobe. Writes go through one router-visible tool, <code>save_style_preference(preference)</code>, specced as Tool 6 above. Evidence: the demo shows the save in interaction one and the recall in interaction two, from a fresh session.</p></div><div class="scard"><div class="shead"><h4>Trend Awareness Tool</h4><span class="pts">+2</span></div><p><code>check_trends</code>, specced as Tool 5 above. Data source is a bundled <code>data/trends.json</code> snapshot styled as a fashion-platform feed, with the interface written so a live API could swap in. No external API at runtime. Evidence: demo showing trend info visibly influencing the outfit suggestion, plus a README section naming the data source.</p></div></div></section>
+<section id="arch" style="--n:'06'"><h2>Architecture</h2><figure class="diagram"><figcaption>Control flow — router, executor, guards</figcaption><pre class="mermaid">flowchart TD
+      U[&quot;User query&quot;] --&gt; INIT[&quot;Session init: new session dict,&lt;br/&gt;load wardrobe + style_profile.json&quot;]
+      INIT --&gt; R{&quot;Router LLM&lt;br/&gt;sees: tool descriptions, conversation,&lt;br/&gt;session summaries&lt;br/&gt;emits: next tool call or finished&quot;}
+
+      R --&gt;|&quot;tool call with&lt;br/&gt;lightweight args&quot;| X[&quot;Executor / guards&lt;br/&gt;1. validate call&lt;br/&gt;2. resolve refs against session&lt;br/&gt;3. inject heavy objects&quot;]
+      X --&gt;|&quot;unknown tool or bad ref:&lt;br/&gt;error fed back as observation&quot;| R
+      X --&gt;|&quot;valid call&quot;| T[&quot;Tool runs&lt;br/&gt;(one of the six)&quot;]
+      T --&gt;|&quot;result written&quot;| S[(&quot;session dict&quot;)]
+      S -.-&gt;|&quot;summary appended&lt;br/&gt;to conversation&quot;| R
+
+      X --&gt;|&quot;search empty:&lt;br/&gt;retry, drop size,&lt;br/&gt;then max_price&quot;| T
+      X --&gt;|&quot;retries exhausted:&lt;br/&gt;suggest_outfit blocked&quot;| E[&quot;session error set&quot;]
+      R --&gt;|&quot;MAX_ITERATIONS hit&quot;| E
+      R --&gt;|&quot;finished, fit_card set&quot;| RET[&quot;return session&quot;]
+      E --&gt; RET
+      RET --&gt; UI[&quot;Gradio: three panels populate&lt;br/&gt;(item, outfit, fit card)&quot;]
+
+      classDef err fill:#fdd,stroke:#c33
+      class E err
+</pre></figure><figure class="diagram"><figcaption>Triggers, state flow, and failure routing</figcaption><pre class="mermaid">flowchart TD
+      Q[&quot;User query&quot;] --&gt; R{&quot;Router&quot;}
+
+      %% what triggers each tool
+      R --&gt;|&quot;states a durable taste&quot;| T1[&quot;save_style_preference&quot;]
+      R --&gt;|&quot;describes an item to find&quot;| T2[&quot;search_listings&quot;]
+      R --&gt;|&quot;asks about price or worth&quot;| T3[&quot;compare_prices&quot;]
+      R --&gt;|&quot;asks what is popular&quot;| T4[&quot;check_trends&quot;]
+      R --&gt;|&quot;item selected, styling asked&quot;| T5[&quot;suggest_outfit&quot;]
+      R --&gt;|&quot;outfit exists, caption next&quot;| T6[&quot;create_fit_card&quot;]
+
+      %% what each tool writes
+      T1 --&gt; P[(&quot;style_profile json file +&lt;br/&gt;session style_profile&quot;)]
+      T2 --&gt; SR[(&quot;session search_results +&lt;br/&gt;selected_item&quot;)]
+      T3 --&gt; PA[(&quot;session price_assessment&quot;)]
+      T4 --&gt; TR[(&quot;session trends&quot;)]
+      T5 --&gt; OS[(&quot;session outfit_suggestion&quot;)]
+      T6 --&gt; FC[(&quot;session fit_card&quot;)]
+
+      %% how state flows forward, injected by the executor
+      SR -.-&gt;|&quot;item_id resolved to full dict&quot;| T3
+      SR -.-&gt;|&quot;same object as new_item&quot;| T5
+      SR -.-&gt;|&quot;same object as new_item&quot;| T6
+      P -.-&gt;|&quot;folded into prompt&quot;| T5
+      TR -.-&gt;|&quot;folded into prompt&quot;| T5
+      OS -.-&gt;|&quot;outfit string&quot;| T6
+
+      %% error branches
+      R -.-&gt;|&quot;nothing to search for&quot;| A[&quot;ask the user what&lt;br/&gt;they are looking for&quot;]
+      R -.-&gt;|&quot;MAX_ITERATIONS hit&quot;| E[&quot;session error set,&lt;br/&gt;return early&quot;]
+      T2 -.-&gt;|&quot;results empty&quot;| RT[&quot;retry: drop size,&lt;br/&gt;then max_price&quot;]
+      RT -.-&gt;|&quot;match found&quot;| SR
+      RT -.-&gt;|&quot;still empty&quot;| E
+      T5 -.-&gt;|&quot;LLM fails after one retry&quot;| E
+      T6 -.-&gt;|&quot;LLM fails&quot;| E2[&quot;error set, outfit&lt;br/&gt;still shown&quot;]
+      T1 -.-&gt;|&quot;write fails&quot;| C[&quot;notify and continue&quot;]
+      T3 -.-&gt;|&quot;under 3 comparables&quot;| C
+      T4 -.-&gt;|&quot;trends file missing&quot;| C
+
+      %% endings
+      FC --&gt; DONE[&quot;fit_card set, loop ends,&lt;br/&gt;three Gradio panels populate&quot;]
+      E --&gt; OUT[&quot;return session with error&quot;]
+      E2 --&gt; OUT
+
+      classDef err fill:#fdd,stroke:#c33
+      classDef soft fill:#ffe9c7,stroke:#c80
+      classDef store fill:#e7f5e7,stroke:#383
+      class E,E2,OUT err
+      class A,C,RT soft
+      class P,SR,PA,TR,OS,FC store
+</pre></figure><details class="datanotes"><summary>Hand-drawn versions (PNG)</summary><p><img src="FitFinderFlow.png" alt="Overall Flowchart"></p><p><img src="FitFinderSession.png" alt="Session State Flowchart"></p></details></section>
+<section id="plan" style="--n:'07'"><h2>AI Tool Plan</h2><p class="lede">Spec first, then the spec becomes the prompt. Generated code is verified against this document before it stays.</p><div class="milestone"><h3>Milestone 3 — Individual tool implementations</h3><p>AI tool: Claude (Claude Code).</p>
+<p>For each of the six tools, one at a time, I'll give Claude that tool's spec block from this document (what it does, inputs, return value, failure behavior) and ask it to implement the function in <code>tools.py</code>, using <code>load_listings()</code>, <code>get_example_wardrobe()</code>, and <code>get_empty_wardrobe()</code> from <code>utils/data_loader.py</code> rather than re-implementing file loading. The LLM-backed tools (<code>suggest_outfit</code>, <code>create_fit_card</code>) use Groq <code>llama-3.3-70b-versatile</code> with the key from <code>.env</code>. I expect back one function per ask, matching the specced signature exactly.</p>
+<p>Before trusting any generated function I'll review it against its spec block: does it take the parameters I defined, return the structure I described, and handle the failure mode in the spec. Specific checks I already know matter from the data analysis:</p>
+<ul><li><code>search_listings</code> must skip null brands (32/40 listings have <code>brand: null</code>) and must not match "L" to "XL", per the token-based size matching in Tool 1.</li><li><code>suggest_outfit</code> must not crash on <code>wardrobe["items"] == []</code> and must skip null <code>notes</code> when formatting wardrobe items into the prompt.</li><li><code>create_fit_card</code> must return varied output across runs for the same input.</li></ul>
+<p>Each tool then gets pytest cases in <code>tests/test_tools.py</code>, at least one per failure mode, and all tests pass before I move to Milestone 4.</p></div><div class="milestone"><h3>Milestone 4 — Planning loop and state management</h3><p>AI tool: Claude again.</p>
+<p>Input: the Planning Loop section, the State Management section, the Error Handling table, and the Architecture diagram from this document.</p>
+<p>I expect back the router loop in <code>agent.py</code>: a Groq function-calling loop with the executor layer that validates every tool call, resolves lightweight references against the session dict, injects the heavy objects, and enforces the hard guards (<code>MAX_ITERATIONS</code>, no <code>suggest_outfit</code> on empty results, no <code>create_fit_card</code> without an outfit).</p>
+<p>Verification is behavioral, straight from the Error Handling table:</p>
+<ul><li>The happy-path demo query produces search, then outfit, then fit card, with <code>session["selected_item"]</code> being the same object passed into <code>suggest_outfit</code>.</li><li>The impossible query ("designer ballgown, XXS, under $5") produces the two-stage retry, then a specific error, and never calls <code>suggest_outfit</code>.</li><li>A hallucinated tool call or bad <code>item_id</code> is fed back as an observation, never executed.</li><li>An empty parsed description asks the user for more instead of searching.</li></ul>
+<p>I'll run <code>python agent.py</code> for both built-in test cases and read <code>session["tool_log"]</code> to confirm the two sequences differ before wiring <code>handle_query()</code> in <code>app.py</code>.</p></div></section>
+<section id="walk" style="--n:'08'"><h2>A Complete Interaction</h2><blockquote class="query">"I'm looking for a vintage graphic tee under $30. I mostly wear baggy jeans and chunky sneakers. What's out there and how would I style it?"</blockquote><ol class="timeline"><li><span class="tmark">&#9201;</span><div><h4>Setup</h4><p>At the beginning of the session, the executor loads the <code>style_profile</code>  data. This is before the user query.</p></div></li><li><span class="tmark">1</span><div><h4>Step 1</h4><p>First, the user enters a message to the agent, who then parses and understands the query. The agent will grab descriptions of tools and decide what information they have and what information is needed to make the call.</p>
+<p>Example: "I'm looking for a vintage graphic tee under $30. I mostly wear baggy jeans and chunky sneakers. What's out there and how would I style it?"</p></div></li><li><span class="tmark">2</span><div><h4>Step 2</h4><p>The agent makes the first call after parsing the query which contained a style taste ("mostly wear baggy jeans and chunky sneakers"). The tool will be the <code>save_style_preference</code> tool with a preference of 'streetwear'. The tool itself writes and updates <code>session['style_profile']</code> and will persist throughout the interaction and into the next, perpetually.</p></div></li><li><span class="tmark">3</span><div><h4>Step 3</h4><p>The previous step results in a list of style preferences, which the model uses to ensure alignment with the agent, and continues. The agent then makes a call to <code>search_listings</code> with the <code>description</code> (<code>vintage graphic tee</code>), <code>size</code> (<code>None</code>) and <code>max_price</code> (<code>30.0</code>) filters. The results are written to <code>session['search_results']</code> to be processed by the next tool.</p></div></li><li><span class="tmark">4</span><div><h4>Step 4</h4><p>The agent makes a call to <code>suggest_outfit</code> with the item from the session, the wardrobe, as well as <code>session["style_profile"]</code> and <code>trends</code>. This will return a string representing the suggested outfit. If the wardrobe is empty, the model will return general style advice. (This query has no trend requests inherently, but others may)</p></div></li><li><span class="tmark">5</span><div><h4>Step 5</h4><p>The agent calls <code>create_fit_card</code> with the outfit from the previous step and the item queried to the user. This returns a string of 2-4 sentences in the style of an Instagram/TikTok caption. The message will mention the item name, price, and platform. Output will vary run to run on the same input.</p></div></li><li><span class="tmark">&#10003;</span><div><h4>Final output to user</h4><p>The router signals finished, <code>fit_card</code> is set, the loop ends, and the user sees all three panels in the gradio interface populated, ending on the caption built from the very item the search found.</p></div></li></ol></section>
+</main>
+</div>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({
+    startOnLoad: true, theme: "base",
+    themeVariables: {
+      darkMode: true, background: "#232629",
+      primaryColor: "#313539", primaryTextColor: "#d9dcdf",
+      primaryBorderColor: "#43484e", lineColor: "#8a8f96",
+      secondaryColor: "#383d42", tertiaryColor: "#2a2d31",
+      fontFamily: "IBM Plex Mono, monospace", fontSize: "14px"
+    }
+  });
+</script>
+</body>
+</html>

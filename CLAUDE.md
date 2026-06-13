@@ -10,12 +10,24 @@ Required workflow order (graded): planning.md filled BEFORE implementation code;
 - Whenever a test/print/demo output appears in the terminal, Claude asks one question:
   "Is this a ledger exhibit?" If yes, it gets captured before moving on.
 - Stretch features ship as implement + demonstrate + document in one sitting.
-- MY deadline is Sunday June 14, 2026, 6:00 PM PT for all artifacts (real deadline:
-  Mon Jun 15, 12:59 AM MDT). Sunday evening is for /grade-sim + submission only.
-  Bulk build day is Saturday June 13; weeknight sessions are ~20-min planning.md
-  chunks only. Stretch: ALL FOUR stretch goals are COMMITTED (+7). Build order:
+- Brian's one scheduling rule: done before Saturday night if possible. Real
+  deadline Mon Jun 15, 12:59 AM MDT. Run /grade-sim before submitting. Do NOT
+  give Brian day-by-day schedules or arbitrary intermediate deadlines.
+  Stretch: ALL FOUR stretch goals are COMMITTED (+7). Build order:
   retry, price comparison, style profile memory, trend awareness.
 - Periodically (every few work sessions) report: ledger rows ticked / total.
+
+## Build workflow (the loop, one tool at a time)
+- planning.md is the spec and the single source of truth. Implement FROM it.
+  If implementation needs to diverge, update planning.md in the same sitting
+  and note the divergence (it feeds the README's spec reflection).
+- TODO.md is Brian's checklist, grouped by phase. Work top to bottom.
+- Per tool: read its spec block in planning.md, implement it in tools.py,
+  Brian reviews against the spec, write its pytest cases in tests/test_tools.py,
+  run them, paste the output into EVIDENCE.md, tick TODO.md, tick any
+  satisfied RUBRIC_LEDGER.md row, commit.
+- The AI Tool Plan section of planning.md lists per-tool verification checks
+  (null brands, L vs XL, empty wardrobe, caption variation). Run them.
 
 ## Decision log (do not reopen without new information)
 - 2026-06-12: Architecture is a ReAct-style LLM router with hard code guards

@@ -1,14 +1,7 @@
 # Rubric Ledger — FitFindr (AI201 Project 2)
 
 **DEADLINE: Monday June 15, 2026, 12:59 AM MDT (= Sunday June 14, 11:59 PM PT)**
-**MY DEADLINE: Sunday June 14, 2026, 6:00 PM PT** — all code, README, and demo video done. Sunday evening (6–11:59 PM) is reserved for `/grade-sim` audit + fixes + submission only.
-
-**The plan (fits a 14h/day work week — bulk of build is Saturday):**
-- **Thu + Fri nights (~20 min each, optional but high-leverage):** fill planning.md in chunks — tool specs one night, loop/state/error table + diagram the next. Pure transcription from the tools.py docstrings; no code, no API key needed. A Saturday that starts with planning.md already done is a Saturday that starts with momentum.
-- **Saturday (the block, ~6–7h):** Milestones 3–5 — implement tools, pytest, wire the loop, trigger every failure mode. Paste every exhibit into EVIDENCE.md as it happens.
-- **Sunday by 6 PM:** README (mostly assembled from EVIDENCE.md pastes) + record the 3–5 min demo.
-- **Sunday 6 PM → submit:** `/grade-sim`, fix list, submit.
-- **Stretch: ALL FOUR stretch goals are COMMITTED (+7).** Build order: retry (inside the core loop), price comparison, style profile memory, trend awareness. Each one gets its planning.md spec block written before its code starts (rubric requirement).
+**THE RULE: done before Saturday night if possible.** Whatever's left after that fits before the real deadline, including a /grade-sim pass before submitting.
 
 Total: 25 pts required + 7 pts stretch. Graded artifacts: **GitHub repo, planning.md, README.md, demo video (3–5 min)**. If the evidence isn't in one of those four places, the point does not exist.
 
