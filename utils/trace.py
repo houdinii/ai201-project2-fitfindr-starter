@@ -15,16 +15,16 @@ import os
 import sys
 import time
 
-_ENABLED = os.environ.get("FITFINDR_LOG", "").lower() not in ("", "0", "false", "no")
-
 
 def enabled() -> bool:
-    return _ENABLED
+    """Read the flag at call time, so it works whether FITFINDR_LOG is set on
+    the shell or loaded from .env after this module is imported."""
+    return os.environ.get("FITFINDR_LOG", "").lower() not in ("", "0", "false", "no")
 
 
 def log(message: str) -> None:
     """Emit one timestamped line to stderr. No-op when logging is off."""
-    if not _ENABLED:
+    if not enabled():
         return
     now = time.time()
     stamp = time.strftime("%H:%M:%S", time.localtime(now))

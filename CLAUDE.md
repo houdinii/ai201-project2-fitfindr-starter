@@ -67,11 +67,27 @@ Required workflow order (graded): planning.md filled BEFORE implementation code;
   item excluded from its own comparables, comp stats are `None` on
   "not enough data". The tools.py function takes the resolved listing dict,
   `item_id` is the router-visible param, per the state-by-reference design.
+- 2026-06-13: Style profile is now surfaced to the ROUTER too, not only to
+  `suggest_outfit`. `run_agent` appends the loaded `session["style_profile"]`
+  to the router's system content at session start, and the system prompt tells
+  the router to fold saved preferences into search and styling, never re-ask
+  them, and treat size/price as optional. Fixes B5 (recall was broken because
+  the router never saw the profile). Refines the 2026-06-12 style-profile entry.
 - 2026-06-12: `check_trends` returns only the four specced fields (tag,
   mentions, momentum, in_stock), the snapshot's `article` and metadata keys
   stay in the file. Category narrowing and `in_stock` are computed against
   listings.json at call time, size matching reuses `_size_matches`. Profile
   file shape is `{"preferences": [...]}` with case-insensitive dedup on save.
+- 2026-06-12: Off-target and non-shoppable input is a DEFINED behavior, not
+  an afterthought (Brian's call, the trend question must answer, not punt).
+  The agent always returns a valid answer. New terminal state
+  `session["response"]` (a success path) holds conversational answers: an info
+  question relayed from a tool result (e.g. "what's trending"), or a scope
+  explanation with an example query for greetings. `session["error"]` is
+  reserved for genuine failures (no results after retry, LLM/API error,
+  MAX_ITERATIONS). Any router final message with no tool call becomes
+  `response`, and the system prompt makes that message useful. Off-target
+  searches like "macbook" fall through the normal no-results path.
 
 ## Open captures for the Milestone 5 + demo pass (code done, proof pending)
 These code paths are built and verified by inspection/pytest. What's left is

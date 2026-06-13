@@ -68,6 +68,7 @@ def _new_session(query: str, wardrobe: dict) -> dict:
         "price_assessment": None,    # compare_prices verdict, None until called
         "outfit_suggestion": None,   # string returned by suggest_outfit
         "fit_card": None,            # string returned by create_fit_card
+        "response": None,            # conversational answer for non-shoppable input
         "error": None,               # set if the interaction ended early
         "notices": [],               # user-facing notes (retry adjustments etc.)
         "iterations": 0,             # router iterations, capped at MAX_ITERATIONS
@@ -110,13 +111,27 @@ automatically.
 5. Call create_fit_card. The outfit is injected automatically.
 The interaction is complete when the fit card is created.
 
-If the message has nothing to search for (a greeting like "hey"), call no \
-tools. Reply asking what they are looking for and give one example, such \
-as: vintage graphic tee under $30, size M.
+Not every message is an item request. Always end with a useful answer, \
+never a dead end:
+- Standalone question you can answer with a tool (such as "what's trending \
+in tops?" or "is X a good deal?"): call that tool (check_trends or \
+compare_prices), then in your final message RELAY the result as a direct \
+answer to their question. Do not ask "what are you looking for?" after you \
+already fetched the answer.
+- Greeting or a message with nothing to act on ("hey", "what can you do?"): \
+call no tools, and in your final message say FitFindr finds and styles \
+secondhand fashion, with one example query like: vintage graphic tee under \
+$30, size M.
+- A search that finds nothing (including non-fashion items like "macbook"): \
+the search tool already returns a clear message, you do not need to add to it.
 
 Rules: call one tool at a time. Use only item ids that appeared in search \
 results. If a tool reports it is blocked or an argument is invalid, fix \
-your next call instead of repeating it."""
+your next call instead of repeating it. Size and max_price are optional, \
+never ask the user for them, just search with the keywords you have. If \
+saved style preferences are listed below, treat them as the user's \
+established taste: fold them into your search keywords and styling, and do \
+NOT ask the user to restate their style."""
 
 _ROUTER_TOOLS = [
     {
@@ -462,12 +477,26 @@ def run_agent(query: str, wardrobe: dict) -> dict:
         log(f"session END error={trunc(session['error'], 60)}")
         return session
 
+    # The profile is loaded at session start. Surface it to the ROUTER too,
+    # not just suggest_outfit, so the router can bias the search and never
+    # asks the user to restate a taste already on file (the recall moment).
+    system_content = _SYSTEM_PROMPT
+    if session["style_profile"]:
+        system_content += (
+            "\n\nSaved style preferences for this user: "
+            + ", ".join(session["style_profile"])
+            + ". Use them as described above, and do not ask the user to "
+            "restate their style."
+        )
+        log(f"router sees saved profile ({len(session['style_profile'])} prefs)")
+
     messages = [
-        {"role": "system", "content": _SYSTEM_PROMPT},
+        {"role": "system", "content": system_content},
         {"role": "user", "content": query},
     ]
 
-    while (not session["fit_card"] and not session["error"]
+    while (not session["fit_card"] and not session["response"]
+           and not session["error"]
            and session["iterations"] < MAX_ITERATIONS):
         session["iterations"] += 1
 
@@ -475,7 +504,7 @@ def run_agent(query: str, wardrobe: dict) -> dict:
             f"(msgs={len(messages)}, temp=0.2)")
         t0 = time.time()
         try:
-            response = _call_with_retry(lambda: client.chat.completions.create(
+            completion = _call_with_retry(lambda: client.chat.completions.create(
                 model=_GROQ_MODEL,
                 messages=messages,
                 tools=_ROUTER_TOOLS,
@@ -488,19 +517,25 @@ def run_agent(query: str, wardrobe: dict) -> dict:
             log("llm  resp  router FAILED after retry")
             break
 
-        msg = response.choices[0].message
+        msg = completion.choices[0].message
         decided = ([tc.function.name for tc in msg.tool_calls]
                    if msg.tool_calls else "none (final message)")
         log(f"llm  resp  router iter {session['iterations']} "
             f"({(time.time() - t0) * 1000:.0f}ms) -> {decided}")
 
         if not msg.tool_calls:
-            # The router signalled it is done talking. With no fit card
-            # this is the ask-the-user branch (e.g. nothing to search for).
-            session["error"] = (msg.content or "").strip() or (
-                "The agent stopped without producing a result. Try "
-                "rephrasing your query."
-            )
+            # The router chose to talk to the user instead of calling a
+            # tool. That is a valid conversational answer (an info reply, a
+            # scope explanation, a redirect), NOT an error. It only becomes
+            # an error if the model returned nothing usable.
+            text = (msg.content or "").strip()
+            if text:
+                session["response"] = text
+            else:
+                session["error"] = (
+                    "The agent stopped without producing a result. Try "
+                    "rephrasing your query."
+                )
             break
 
         messages.append({
@@ -546,7 +581,8 @@ def run_agent(query: str, wardrobe: dict) -> dict:
                 "content": observation,
             })
 
-    if not session["fit_card"] and not session["error"]:
+    if (not session["fit_card"] and not session["response"]
+            and not session["error"]):
         # MAX_ITERATIONS exhausted. Say what was accomplished and show
         # partial results, per the Error Handling table.
         done = []
@@ -561,8 +597,12 @@ def run_agent(query: str, wardrobe: dict) -> dict:
             f"try re-running or simplifying the query."
         )
 
-    outcome = ("fit_card" if session["fit_card"]
-               else f"error={trunc(session['error'], 50)}")
+    if session["fit_card"]:
+        outcome = "fit_card"
+    elif session["response"]:
+        outcome = f"response={trunc(session['response'], 50)}"
+    else:
+        outcome = f"error={trunc(session['error'], 50)}"
     log(f"session END {outcome} (iters={session['iterations']}, "
         f"tools={len(session['tool_log'])})")
     return session
@@ -578,6 +618,8 @@ def _print_session_outcome(session: dict) -> None:
         print(f"Error: {session['error']}")
         if session["outfit_suggestion"]:
             print(f"\nPartial outfit kept: {session['outfit_suggestion']}")
+    elif session["response"]:
+        print(f"Response: {session['response']}")
     else:
         print(f"Found: {session['selected_item']['title']} "
               f"(${session['selected_item']['price']:.2f}, "

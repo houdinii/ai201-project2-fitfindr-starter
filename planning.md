@@ -189,7 +189,14 @@ The router's choices are bounded by hard guards in code, starting with a `MAX_IT
 
 The three optional tools never gate the core chain. After a successful search, the router may call `compare_prices` (when the query asks about price or worth) and `check_trends` (to enrich the suggestion). `save_style_preference` fires whenever the user states a durable taste. Results from all three land in the session, and the executor folds the style profile and trend data into the `suggest_outfit` prompt.
 
-The loop terminates when `fit_card` is set (success) or `error` is set (early exit). Query understanding happens in the same router call when the LLM extracts `description`/`size`/`max_price` for `search_listings` itself, passing `None` for anything the user didn't mention, and `search_listings` skips `None` filters.
+**Off-target and non-shoppable input.** Not every message is a shoppable item request. The router must always end with a valid, useful answer, never a dead-end or a confusing punt. Three cases are defined:
+1. A search for something FitFindr does not carry (a non-fashion item like "macbook", or a fashion item not in the 40-listing catalog). `search_listings` returns empty, the two-stage retry runs, and the agent ends with the no-results message naming the cheapest in-stock item and asking the user to rephrase. This is a valid answer set in `session["error"]`.
+2. A standalone question that a tool can answer (such as "what's trending in tops?"). The router calls the relevant tool (`check_trends`, `compare_prices`), then ends with a final message that RELAYS the tool result as a direct answer. This is a conversational answer, set in `session["response"]`, not an error.
+3. A greeting or a message with nothing to act on ("hey", "what can you do?"). The router calls no tools and ends with a final message that explains FitFindr finds and styles secondhand fashion, with one example query. Also a `session["response"]`.
+
+The distinction matters: an informational answer or a redirect is a SUCCESS path, so it goes in `session["response"]`, while `session["error"]` is reserved for genuine failures (no results after retry, an LLM or API error, `MAX_ITERATIONS` exhausted). Whenever the router emits a final message with no tool call, that text becomes `session["response"]`. The system prompt instructs the router to make that final message useful: answer the question from the tool result if it called one, otherwise explain the scope and give an example.
+
+The loop terminates when `fit_card` is set (full styling success), `response` is set (a conversational answer was given), or `error` is set (a genuine failure). Query understanding happens in the same router call when the LLM extracts `description`/`size`/`max_price` for `search_listings` itself, passing `None` for anything the user didn't mention, and `search_listings` skips `None` filters.
 
 ---
 
@@ -207,7 +214,8 @@ There are two layers to the state. The first is the session state, found in `_ne
 - `price_assessment` (`dict` | `None`): The verdict returned by `compare_prices`, `None` until called.
 - `outfit_suggestion` (`str`): The outfit suggestion string returned by `suggest_outfit()`.
 - `fit_card` (`str`): The outfit caption string returned by `create_fit_card()`.
-- `error` (`str`): If an error occurs, this is set to a message describing the error.
+- `response` (`str`): A conversational answer for non-shoppable input (an informational answer like a trend report, or a scope explanation with an example query). A success path, distinct from `error`. `None` until the router ends with a final message and no tool call.
+- `error` (`str`): If a genuine failure occurs (no results after retry, an LLM or API error, `MAX_ITERATIONS` exhausted), this is set to a message describing it.
 - `iterations` (`int`): Router iteration counter, checked against `MAX_ITERATIONS`.
 - `tool_log` (`list`): Record of tool calls made, for debugging and the demo.
 
@@ -239,8 +247,10 @@ For each tool, describe the specific failure mode you're handling and what the a
 | save_style_preference | Profile file cannot be written                                                                                          | The tool returns a descriptive error string instead of raising. The agent tells the user the preference couldn't be saved this time and continues the session.                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | router / executor     | Any LLM call fails (Groq error, timeout, or rate limit). Applies to the router, `suggest_outfit`, and `create_fit_card` | Catch, wait briefly, retry once. If it still fails, set `session["error"]` to "The styling service is busy, try again in a moment" and preserve whatever the session already holds, such as search results or an outfit.                                                                                                                                                                                                                                                                                                                                                              |
 | router / executor     | Router names a tool that doesn't exist or supplies a bad reference, such as an `item_id` not in `search_results`        | The executor validates every call before running it. Invalid calls are never executed. The error is fed back into the conversation as an observation so the router can self-correct on the next iteration. The failed attempt still counts toward `MAX_ITERATIONS`.                                                                                                                                                                                                                                                                                                                   |
-| router / executor     | `MAX_ITERATIONS` exhausted without `fit_card` or `error` set                                                            | Exit with an error message saying what was accomplished, and show partial results. If an outfit exists but no caption, the user still gets the outfit.                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| router / executor     | Parsed `description` is empty, the query has nothing to search for (such as "hey")                                      | `search_listings` is never called. The agent asks what the user is looking for and gives an example query.                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| router / executor     | `MAX_ITERATIONS` exhausted without `fit_card`, `response`, or `error` set                                               | Exit with an error message saying what was accomplished, and show partial results. If an outfit exists but no caption, the user still gets the outfit.                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| router / executor     | Parsed `description` is empty, the query has nothing to search for (such as "hey")                                      | `search_listings` is never called. The agent ends with a `session["response"]` explaining FitFindr finds and styles secondhand fashion, with one example query. A success path, not an error.                                                                                                                                                                                                                                                                                                                                                                                          |
+| router / executor     | Off-target search with no catalog match (a non-fashion item like "macbook", or a fashion item not in stock)             | `search_listings` returns empty, the two-stage retry runs, and the agent ends with the no-results message naming the cheapest in-stock item and asking the user to rephrase. A valid answer in `session["error"]`, never a traceback.                                                                                                                                                                                                                                                                                                                                                  |
+| router / executor     | Standalone informational question a tool can answer (such as "what's trending in tops?")                                | The router calls the relevant tool (`check_trends`, `compare_prices`), then ends with a final message that relays the result as a direct answer. Stored in `session["response"]`, not treated as an error. This is the defined behavior, the agent must never punt with "what are you looking for?" after fetching the answer.                                                                                                                                                                                                                                                          |
 
 ---
 
@@ -319,8 +329,9 @@ flowchart TD
       TR -.->|"folded into prompt"| T5
       OS -.->|"outfit string"| T6
 
-      %% error branches
-      R -.->|"nothing to search for"| A["ask the user what<br/>they are looking for"]
+      %% non-shoppable + error branches
+      R -.->|"greeting / nothing to act on"| A["session response: explain<br/>scope + example query"]
+      R -.->|"info question, after tool answers"| A2["session response: relay<br/>trend / price answer"]
       R -.->|"MAX_ITERATIONS hit"| E["session error set,<br/>return early"]
       T2 -.->|"results empty"| RT["retry: drop size,<br/>then max_price"]
       RT -.->|"match found"| SR
@@ -333,6 +344,8 @@ flowchart TD
 
       %% endings
       FC --> DONE["fit_card set, loop ends,<br/>three Gradio panels populate"]
+      A --> RESP["return session with response<br/>(valid answer, not an error)"]
+      A2 --> RESP
       E --> OUT["return session with error"]
       E2 --> OUT
 
@@ -340,8 +353,8 @@ flowchart TD
       classDef soft fill:#ffe9c7,stroke:#c80
       classDef store fill:#e7f5e7,stroke:#383
       class E,E2,OUT err
-      class A,C,RT soft
-      class P,SR,PA,TR,OS,FC store
+      class A,A2,C,RT soft
+      class P,SR,PA,TR,OS,FC,RESP store
 ```
 
 ---

@@ -76,6 +76,11 @@ def handle_query(user_query: str, wardrobe_choice: str) -> tuple[str, str, str]:
     outfit = session["outfit_suggestion"] or ""
     fit_card = session["fit_card"] or ""
 
+    # Conversational answer for non-shoppable input (a trend report, a scope
+    # explanation, a redirect). A valid response, not an error.
+    if session["response"]:
+        return notice_block + session["response"], "", ""
+
     if session["error"]:
         # Nothing found: the error is the whole story, panel 1 carries it.
         if item is None:
