@@ -17,19 +17,19 @@
 - [x] Paste pytest output into EVIDENCE.md
 
 ## suggest_outfit
-- [ ] Implement `suggest_outfit` (Groq)
-- [ ] Empty wardrobe → general advice, no crash
-- [ ] Null `notes` skipped in prompt
-- [ ] Optional params `style_profile`, `trends` wired
-- [ ] Test: empty wardrobe case
-- [ ] One manual run pasted into EVIDENCE.md
+- [x] Implement `suggest_outfit` (Groq)
+- [x] Empty wardrobe → general advice, no crash
+- [x] Null `notes` skipped in prompt
+- [x] Optional params `style_profile`, `trends` wired
+- [x] Test: empty wardrobe case
+- [x] One manual run pasted into EVIDENCE.md
 
 ## create_fit_card
-- [ ] Implement `create_fit_card` (Groq, high temp)
-- [ ] Empty outfit → error string, no exception
-- [ ] Run twice, same input, outputs differ
-- [ ] Paste both runs into EVIDENCE.md
-- [ ] Test: empty outfit case
+- [x] Implement `create_fit_card` (Groq, high temp)
+- [x] Empty outfit → error string, no exception
+- [x] Run twice, same input, outputs differ
+- [x] Paste both runs into EVIDENCE.md
+- [x] Test: empty outfit case
 
 ## stretch tools
 - [ ] Implement `compare_prices`

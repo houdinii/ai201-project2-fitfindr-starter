@@ -112,9 +112,11 @@ If the LLM call itself errors, the tool returns a detectable failure the same wa
 
 Given an item, it estimates whether the price is fair based on comparable listings in the dataset. Comparables are listings in the same `category` that share at least one `style_tag` with the item. If that yields fewer than 3, it falls back to the whole category. The item's price is placed against the comparable price range to produce a verdict. Pure local computation, no LLM call.
 
+Precisely: the item is always excluded from its own comparables, and the verdict band is the comparable median plus or minus 10 percent. Below the band is "below market", inside it is "fair", above it is "above market".
+
 **Input parameters:**
 
-- `item_id` (`str`): The id of the listing to assess, such as "lst_017". The executor resolves it to the full listing dict from `session["search_results"]`.
+- `item_id` (`str`): The id of the listing to assess, such as "lst_017". The executor resolves it to the full listing dict from `session["search_results"]`. Precisely: `item_id` is the router-visible parameter. Per the state-by-reference design, the `tools.py` function is `compare_prices(item)` and receives the resolved listing dict, keeping the tool testable in isolation.
 
 **What it returns:**
 
@@ -133,7 +135,9 @@ If fewer than 3 comparables exist even after the category fallback, the verdict 
 
 **What it does:**
 
-Surfaces which styles are currently popular by reading `data/trends.json`, a bundled snapshot of tag activity styled as a fashion-platform feed (the documented data source, with the interface written so a live API could swap in). Results can be narrowed to a category and cross-referenced against the user's size so trends are only surfaced when something matching is actually in stock.
+Surfaces which styles are currently popular by reading `data/trends.json`, a bundled DUMMY snapshot of tag activity formatted like a fashion-platform feed. The numbers are synthetic, invented for this project, and the file marks itself as dummy data. The README documents this honestly as the data source, with the interface written so a live API could swap in. Results can be narrowed to a category and cross-referenced against the user's size so trends are only surfaced when something matching is actually in stock.
+
+Precisely: `trends.json` stores `tag`, `mentions`, and `momentum` per trend. Category narrowing and the `in_stock` count are computed against `listings.json` at call time, and size matching reuses the same token rule as `search_listings`. A trend with no listings in the requested category is dropped. With no category filter, trends are returned even when nothing in stock carries the tag, since trend data is flavor.
 
 **Input parameters:**
 
@@ -159,6 +163,8 @@ Trend data is flavor, never load-bearing. If `trends.json` is missing or unreada
 **What it does:**
 
 Persists a style preference the user states during a conversation, appending it to `data/style_profile.json` (stretch: Style Profile Memory). The router calls it when the user expresses a durable taste, such as "I'm really into grunge lately" or "never show me pink." Saving is the only tool. Reading is automatic, the executor loads the profile at session start and injects it into the `suggest_outfit` prompt the same way it injects the wardrobe.
+
+Precisely: the profile file shape is `{"preferences": [...]}`, mirroring the wardrobe's `items` shape. Saves dedupe case-insensitively, so re-saving an existing preference returns the list unchanged instead of appending a duplicate.
 
 **Input parameters:**
 

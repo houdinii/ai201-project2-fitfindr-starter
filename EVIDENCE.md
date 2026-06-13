@@ -63,3 +63,148 @@ What this proves: `search_listings` tested in isolation before the planning loop
 Covers the Tool 1 spec verification checks (null brands, L vs XL, empty results)
 plus its failure mode (no matches returns an empty list, no exception).
 Full suite including data loader smoke tests: 19 passed.
+
+## 2026-06-12 · suggest_outfit failure mode: empty wardrobe → general advice, no exception (Error Handling row + Milestone 5 capture)
+`suggest_outfit(lst_002, get_empty_wardrobe())` live against Groq, alongside the happy path:
+```
+Item: lst_002 Y2K Baby Tee — Butterfly Print
+
+=== With example wardrobe ===
+You can create a cute and casual outfit by pairing the Y2K Baby Tee — Butterfly Print with the Baggy straight-leg jeans, dark wash and the Chunky white sneakers. This outfit works because the fitted crop length of the tee complements the high-waisted and baggy fit of the jeans, creating a nice balance of proportions. The chunky sneakers add a fun and playful touch to the overall look, matching the Y2K vibe of the tee.
+
+Alternatively, you can dress up the Y2K Baby Tee — Butterfly Print by pairing it with the Wide-leg khaki trousers and the Black combat boots. This outfit works because the earthy tones of the trousers bring out the pink and purple hues in the butterfly graphic, creating a nice contrast. The black combat boots add an edgy touch, which is balanced by the sweetness of the butterfly print, resulting in a unique and stylish look.
+
+=== With empty wardrobe ===
+This Y2K baby tee is a great find, and with its fitted crop length and sweet butterfly graphic, it's perfect for creating a variety of looks. To style this top, consider pairing it with high-waisted pants or skirts to balance out the cropped length. A flowy maxi skirt in a neutral color like beige or denim would create a cute, cottagecore-inspired look, while high-waisted jeans or a flowy wide-leg pant would add a more retro touch.
+
+In terms of colors, the pastel pink and purple hues in the butterfly graphic are soft and feminine, so try pairing the tee with other soft colors like pale yellow, mint green, or lavender. You could also add a pop of contrast with a brighter color like red or coral, but keep in mind the overall Y2K vibe of the top and opt for a more subtle approach.
+
+For shoes, sneakers like Converse or Vans would be a great match for a casual, everyday look, while sandals or ankle boots could dress up the tee for a night out or special occasion. Overall, this top suits a playful, nostalgic vibe, so don't be afraid to have fun with it and experiment with different combinations of pieces to create a look that's all your own.
+```
+What this proves: the empty wardrobe failure mode returns general styling advice
+instead of raising, per the Error Handling table. The happy path names real
+wardrobe pieces (w_001 baggy jeans, w_007 chunky white sneakers), the exact
+pairing planning.md predicts for the demo query. Tool 2 verified in isolation
+before the planning loop.
+
+## 2026-06-12 · pytest tests, ≥1 test per failure mode, all passing (Milestone 3) — Tool 2 portion
+`python -m pytest tests/test_tools.py -v` (Tool 2 tests mock the Groq client, deterministic and keyless)
+```
+tests/test_tools.py::test_wardrobe_branch_returns_reply_and_names_pieces PASSED [ 62%]
+tests/test_tools.py::test_empty_wardrobe_switches_to_general_advice_prompt PASSED [ 66%]
+tests/test_tools.py::test_null_notes_skipped_in_wardrobe_prompt PASSED   [ 70%]
+tests/test_tools.py::test_null_brand_skipped_in_item_prompt PASSED       [ 74%]
+tests/test_tools.py::test_brand_included_when_present PASSED             [ 77%]
+tests/test_tools.py::test_style_profile_included_when_given PASSED       [ 81%]
+tests/test_tools.py::test_optional_sections_omitted_when_absent PASSED   [ 85%]
+tests/test_tools.py::test_trends_included_when_given PASSED              [ 88%]
+tests/test_tools.py::test_empty_llm_response_raises_runtime_error PASSED [ 92%]
+tests/test_tools.py::test_groq_error_propagates_to_caller PASSED         [ 96%]
+tests/test_tools.py::test_uses_specced_model PASSED                      [100%]
+
+============================== 27 passed in 0.21s ==============================
+```
+What this proves: `suggest_outfit` failure contract tested, empty wardrobe
+switches to general advice without raising, empty LLM response raises
+`RuntimeError`, Groq errors propagate to the executor. Both null guards
+(brand, notes) and both optional prompt sections covered. Full file run,
+Tool 1's 16 tests still passing alongside.
+
+## 2026-06-12 · create_fit_card variation requirement: two runs, same input, different captions (high-value capture)
+Two consecutive `create_fit_card(outfit, item)` calls, identical input, live against Groq at temperature 1.0:
+```
+=== Run 1 ===
+I just scored the cutest Y2K Baby Tee with a butterfly print on depop for $18.00 and I'm obsessed with how it looks paired with my baggy straight-leg jeans and chunky white sneakers, it's giving me a fresh streetwear vibe with a hint of vintage charm. The fitted crop top and loose jeans are a perfect combo, and the sneakers add just the right amount of sporty edge. I've also been experimenting with dressing it up with some wide-leg khaki trousers and black combat boots for a more laid-back, earthy look.
+
+  name x1, price x1, platform x1
+
+=== Run 2 (same input) ===
+I just scored the cutest Y2K Baby Tee with a butterfly print on depop for $18.00 and I'm obsessed with how it looks with my baggy jeans and chunky sneakers. The fitted crop top and loose pants are such a great combo, it's giving me a perfect laid-back streetwear vibe. I've also been experimenting with dressing it up with khaki trousers and combat boots for a more edgy look, and I love how the earthy tones bring out the pastel colors in the tee.
+
+  name x1, price x1, platform x1
+
+Captions differ: True
+```
+What this proves: the variation requirement (higher temperature produces
+different captions for the same input) and the once-each mention rule for
+item name, price, and platform, counted programmatically in the output.
+
+## 2026-06-12 · pytest tests, ≥1 test per failure mode, all passing (Milestone 3) — Tool 3 portion, row COMPLETE
+`python -m pytest tests/test_tools.py -v` (Groq mocked, deterministic and keyless)
+```
+tests/test_tools.py::test_empty_outfit_returns_error_string_not_exception PASSED [ 80%]
+tests/test_tools.py::test_whitespace_outfit_returns_error_string PASSED  [ 82%]
+tests/test_tools.py::test_none_outfit_returns_error_string PASSED        [ 85%]
+tests/test_tools.py::test_happy_path_returns_caption_and_prompts_with_required_fields PASSED [ 88%]
+tests/test_tools.py::test_uses_higher_temperature_for_variation PASSED   [ 91%]
+tests/test_tools.py::test_fit_card_empty_llm_response_raises_runtime_error PASSED [ 94%]
+tests/test_tools.py::test_fit_card_groq_error_propagates PASSED          [ 97%]
+tests/test_tools.py::test_fit_card_uses_specced_model PASSED             [100%]
+
+============================== 35 passed in 0.22s ==============================
+```
+What this proves: `create_fit_card`'s failure mode per the Error Handling
+table, empty or missing outfit returns a descriptive error string naming the
+item and the fix (run `suggest_outfit` first), never an exception, and the
+LLM is never called in that branch. All three required tools now have
+failure mode tests passing, completing the Milestone 3 pytest requirement.
+
+## 2026-06-12 · Stretch tools tested in isolation, all failure modes covered (feeds Price Comparison, Trend Awareness, Style Memory rows)
+`python -m pytest tests/test_tools.py -v`, 17 new tests for `compare_prices`, `check_trends`, `save_style_preference`:
+```
+tests/test_tools.py::test_compare_prices_returns_full_verdict_dict PASSED [ 69%]
+tests/test_tools.py::test_compare_prices_excludes_item_from_own_comparables PASSED [ 71%]
+tests/test_tools.py::test_compare_prices_verdict_band_below_and_above PASSED [ 73%]
+tests/test_tools.py::test_compare_prices_falls_back_to_category_on_rare_tags PASSED [ 75%]
+tests/test_tools.py::test_compare_prices_not_enough_data_for_accessories PASSED [ 76%]
+tests/test_tools.py::test_check_trends_returns_top5_sorted_by_mentions PASSED [ 78%]
+tests/test_tools.py::test_check_trends_in_stock_zero_when_size_is_none PASSED [ 80%]
+tests/test_tools.py::test_check_trends_category_filter_drops_absent_tags PASSED [ 82%]
+tests/test_tools.py::test_check_trends_unknown_category_returns_empty_list PASSED [ 84%]
+tests/test_tools.py::test_check_trends_size_counts_in_stock PASSED       [ 86%]
+tests/test_tools.py::test_check_trends_missing_file_returns_empty_list PASSED [ 88%]
+tests/test_tools.py::test_check_trends_corrupt_file_returns_empty_list PASSED [ 90%]
+tests/test_tools.py::test_save_first_preference_creates_file PASSED      [ 92%]
+tests/test_tools.py::test_save_appends_and_returns_updated_list PASSED   [ 94%]
+tests/test_tools.py::test_save_dedupes_case_insensitively PASSED         [ 96%]
+tests/test_tools.py::test_save_corrupt_profile_treated_as_empty PASSED   [ 98%]
+tests/test_tools.py::test_save_write_failure_returns_error_string PASSED [100%]
+
+============================== 52 passed in 0.26s ==============================
+```
+What this proves: every Error Handling table row for the stretch tools is
+tested. `compare_prices` returns "not enough data" with `None` stats on the
+accessories category (only 2 comparables after excluding the item).
+`check_trends` returns an empty list on missing file, corrupt file, and
+unmatched category, never raising. `save_style_preference` returns a
+descriptive error string on write failure and treats a corrupt profile as
+empty on read.
+
+## 2026-06-12 · compare_prices and check_trends live isolation run (assessment-with-reasoning, trend narrowing)
+`compare_prices(lst_001)` and `check_trends(category="tops", size="M")`, pure local, no LLM:
+```
+=== compare_prices(lst_001 Vintage Levi's 501 Jeans — Medium Wash, $38.00) ===
+{
+  "verdict": "above market",
+  "item_price": 38.0,
+  "comparable_count": 8,
+  "comp_min": 14.0,
+  "comp_median": 29.5,
+  "comp_max": 36.0,
+  "reasoning": "At $38.00 this item sits above the $29.50 median of 8 comparable bottoms listings."
+}
+
+=== check_trends(category='tops', size='M') ===
+[
+  {"tag": "y2k", "mentions": 14200, "momentum": 0.45, "in_stock": 2},
+  {"tag": "cottagecore", "mentions": 9400, "momentum": 0.18, "in_stock": 4},
+  {"tag": "grunge", "mentions": 8600, "momentum": 0.21, "in_stock": 1},
+  {"tag": "streetwear", "mentions": 7900, "momentum": -0.05, "in_stock": 0},
+  {"tag": "vintage", "mentions": 7200, "momentum": 0.08, "in_stock": 5}
+]
+```
+What this proves: the price assessment comes with comparable-based reasoning
+(8 comparables, tag-overlap pool), and trends narrow by category with real
+in-stock counts per size. Trend figures come from `data/trends.json`, which
+is DUMMY DATA, synthetic numbers marked as such in the file itself,
+planning.md, and the README's data source description.

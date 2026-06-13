@@ -25,7 +25,7 @@ Required workflow order (graded): planning.md filled BEFORE implementation code;
 - Per tool: read its spec block in planning.md, implement it in tools.py,
   Brian reviews against the spec, write its pytest cases in tests/test_tools.py,
   run them, paste the output into EVIDENCE.md, tick TODO.md, tick any
-  satisfied RUBRIC_LEDGER.md row, commit.
+  satisfied RUBRIC_LEDGER.md row. Brian commits.
 - The AI Tool Plan section of planning.md lists per-tool verification checks
   (null brands, L vs XL, empty wardrobe, caption variation). Run them.
 
@@ -49,10 +49,25 @@ Required workflow order (graded): planning.md filled BEFORE implementation code;
   into the `suggest_outfit` prompt like the wardrobe. Writes go through one
   router-visible tool, `save_style_preference(preference)`, so the demo shows
   the save happening in interaction one and the recall in interaction two.
+- 2026-06-12: LLM tool failure signal is an exception. `suggest_outfit`
+  propagates Groq client errors and raises `RuntimeError` on an empty LLM
+  response. The executor owns catch, wait, retry once, then `session["error"]`,
+  per the Error Handling table. Tools stay pure, the agent layer handles policy.
 - 2026-06-12: Trend awareness data source is a bundled `data/trends.json`
-  snapshot (tag and style frequencies styled as a fashion-platform feed),
-  documented in the README as the data source, with the tool interface
-  written so a live API could be swapped in. No external API on build day.
+  snapshot (tag and style frequencies formatted like a fashion-platform
+  feed), documented in the README as the data source, with the tool
+  interface written so a live API could be swapped in. No external API on
+  build day. MUST be marked as DUMMY data everywhere it's described (the
+  file's own _note, planning.md, README). The numbers are synthetic,
+  never present them as real platform data.
+- 2026-06-12: `compare_prices` verdict band is the comparable median ±10%,
+  item excluded from its own comparables, comp stats are `None` on
+  "not enough data". The tools.py function takes the resolved listing dict,
+  `item_id` is the router-visible param, per the state-by-reference design.
+- 2026-06-12: `trends.json` stores tag, mentions, momentum only. Category
+  narrowing and `in_stock` are computed against listings.json at call time,
+  size matching reuses `_size_matches`. Profile file shape is
+  `{"preferences": [...]}` with case-insensitive dedup on save.
 
 ## Working with Brian (enforced by Claude every session)
 - Be decisive. Make one call, state the reason once, log it in the decision
@@ -61,3 +76,6 @@ Required workflow order (graded): planning.md filled BEFORE implementation code;
   fast, competent programmer. Planning is where he wants the help, not pace.
 - Writing style: no em dashes, no semicolons. Periods and commas instead.
   Wrap function names and variables in backticks.
+- Brian handles all git commits himself. Claude never runs `git commit`,
+  never adds Co-Authored-By trailers, and leaves the working tree for Brian
+  to review and commit.

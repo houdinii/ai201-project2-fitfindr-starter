@@ -76,7 +76,7 @@ Total: 25 pts required + 7 pts stretch. Graded artifacts: **GitHub repo, plannin
 - [ ] Architecture diagram is **text-based in planning.md** (ASCII or ```mermaid block). Embedded image = automated grader can't read it = point lost.
 - [ ] README tool inputs/returns **must match actual function signatures** in tools.py.
 - [ ] planning.md **updated before starting any stretch feature** (stated requirement).
-- [ ] pytest tests in `tests/test_tools.py`, ≥1 test per failure mode, all passing (Milestone 3 requirement). Tool 1 ☑ 2026-06-12, 16 tests incl. failure mode, exhibit in EVIDENCE.md. Tools 2–3 pending.
+- [x] pytest tests in `tests/test_tools.py`, ≥1 test per failure mode, all passing (Milestone 3 requirement). COMPLETE 2026-06-12: Tool 1, 16 tests. Tool 2, 11 tests (empty wardrobe, LLM error). Tool 3, 8 tests (empty outfit error string, LLM error). Stretch tools 4-6, 17 tests (not enough data, missing/corrupt trends.json, write failure). 52 passing, exhibits in EVIDENCE.md.
 - [ ] Submit: forked repo link + planning.md in root + README.md + demo video, via Course Portal.
 - [ ] `.env` never committed.
 

@@ -7,13 +7,18 @@ can be called and tested independently before being wired into the agent loop.
 Complete and test each tool before moving to agent.py.
 
 Tools:
-    search_listings(description, size, max_price)   → list[dict]
-    suggest_outfit(new_item, wardrobe)              → str
-    create_fit_card(outfit, new_item)               → str
+    search_listings(description, size, max_price)               → list[dict]
+    suggest_outfit(new_item, wardrobe, style_profile, trends)   → str
+    create_fit_card(outfit, new_item)                           → str
+    compare_prices(item)                                        → dict
+    check_trends(category, size)                                → list[dict]
+    save_style_preference(preference)                           → list[str] | str
 """
 
+import json
 import os
 import re
+import statistics
 
 from dotenv import load_dotenv
 from groq import Groq
@@ -21,6 +26,10 @@ from groq import Groq
 from utils.data_loader import load_listings
 
 load_dotenv()
+
+_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+_TRENDS_PATH = os.path.join(_DATA_DIR, "trends.json")
+_STYLE_PROFILE_PATH = os.path.join(_DATA_DIR, "style_profile.json")
 
 
 # ── Groq client ───────────────────────────────────────────────────────────────
@@ -118,33 +127,139 @@ def search_listings(
 
 # ── Tool 2: suggest_outfit ────────────────────────────────────────────────────
 
-def suggest_outfit(new_item: dict, wardrobe: dict) -> str:
+_GROQ_MODEL = "llama-3.3-70b-versatile"
+
+
+def _format_listing(item: dict) -> str:
+    """Format a listing dict into prompt-ready lines. Skips null brand."""
+    lines = [
+        f"Title: {item['title']}",
+        f"Description: {item['description']}",
+        f"Category: {item['category']}",
+        f"Style tags: {', '.join(item['style_tags'])}",
+        f"Colors: {', '.join(item['colors'])}",
+        f"Size: {item['size']}",
+        f"Condition: {item['condition']}",
+        f"Price: ${item['price']:.2f}",
+        f"Platform: {item['platform']}",
+    ]
+    if item.get("brand"):
+        lines.insert(1, f"Brand: {item['brand']}")
+    return "\n".join(lines)
+
+
+def _format_wardrobe(items: list[dict]) -> str:
     """
-    Given a thrifted item and the user's wardrobe, suggest 1–2 complete outfits.
+    Format wardrobe items into prompt-ready bullet lines.
+
+    Wardrobe items have only name, category, colors, style_tags, and notes.
+    No size or price. Null notes are skipped, same guard as null brand.
+    """
+    lines = []
+    for w in items:
+        line = (
+            f"- {w['name']} (category: {w['category']}, "
+            f"colors: {', '.join(w['colors'])}, "
+            f"style: {', '.join(w['style_tags'])})"
+        )
+        if w.get("notes"):
+            line += f". Notes: {w['notes']}"
+        lines.append(line)
+    return "\n".join(lines)
+
+
+def suggest_outfit(
+    new_item: dict,
+    wardrobe: dict,
+    style_profile: list[str] | None = None,
+    trends: list[dict] | None = None,
+) -> str:
+    """
+    Given a thrifted item and the user's wardrobe, suggest 1-2 complete outfits.
 
     Args:
-        new_item: A listing dict (the item the user is considering buying).
-        wardrobe: A wardrobe dict with an 'items' key containing a list of
-                  wardrobe item dicts. May be empty — handle this gracefully.
+        new_item:      A listing dict (the item the user is considering buying).
+        wardrobe:      A wardrobe dict with an 'items' key containing a list of
+                       wardrobe item dicts. May be empty, handled gracefully.
+        style_profile: Saved preferences loaded from data/style_profile.json,
+                       injected by the executor when present. Optional.
+        trends:        Trend data from check_trends, injected by the executor
+                       when available. Optional.
 
     Returns:
-        A non-empty string with outfit suggestions.
-        If the wardrobe is empty, offer general styling advice for the item
-        rather than raising an exception or returning an empty string.
+        A non-empty string with outfit suggestions. If the wardrobe is empty,
+        the string is general styling advice for the item instead of
+        wardrobe-specific outfits.
 
-    TODO:
-        1. Check whether wardrobe['items'] is empty.
-        2. If empty: call the LLM with a prompt for general styling ideas
-           (what kinds of items pair well, what vibe it suits, etc.).
-        3. If not empty: format the wardrobe items into a prompt and ask
-           the LLM to suggest specific outfit combinations using the new item
-           and named pieces from the wardrobe.
-        4. Return the LLM's response as a string.
-
-    Before writing code, fill in the Tool 2 section of planning.md.
+    Raises:
+        Propagates Groq client errors, and raises RuntimeError if the LLM
+        returns an empty response. The executor owns the catch, wait, and
+        retry-once behavior per the Error Handling table in planning.md.
     """
-    # Replace this with your implementation
-    return ""
+    items = wardrobe.get("items", [])
+
+    sections = [
+        "The user is considering buying this thrifted item:",
+        _format_listing(new_item),
+    ]
+
+    if items:
+        sections += [
+            "",
+            "Their current wardrobe:",
+            _format_wardrobe(items),
+            "",
+            "Suggest 1-2 complete outfits built around the new item. Use "
+            "specific pieces from the wardrobe, referring to each piece by "
+            "its name. Briefly say why each outfit works.",
+        ]
+    else:
+        sections += [
+            "",
+            "The user has not added any wardrobe items yet. Give general "
+            "styling advice for this item instead: what kinds of pieces pair "
+            "well with it, what colors and silhouettes to reach for, and "
+            "what vibe it suits.",
+        ]
+
+    if style_profile:
+        sections += [
+            "",
+            "The user's saved style preferences, weigh these when choosing "
+            "pieces: " + ", ".join(style_profile),
+        ]
+
+    if trends:
+        sections += [
+            "",
+            "Current trend data, mention a trend only where it genuinely "
+            "fits the outfit: " + json.dumps(trends),
+        ]
+
+    client = _get_groq_client()
+    response = client.chat.completions.create(
+        model=_GROQ_MODEL,
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "You are FitFindr, a friendly secondhand-fashion stylist. "
+                    "Keep suggestions concrete and wearable, grounded in the "
+                    "pieces you are given. Plain text, no markdown headers."
+                ),
+            },
+            {"role": "user", "content": "\n".join(sections)},
+        ],
+        temperature=0.7,
+    )
+
+    text = (response.choices[0].message.content or "").strip()
+    if not text:
+        raise RuntimeError(
+            f"suggest_outfit got an empty LLM response for "
+            f"'{new_item['title']}'"
+        )
+    return text
 
 
 # ── Tool 3: create_fit_card ───────────────────────────────────────────────────
@@ -158,23 +273,254 @@ def create_fit_card(outfit: str, new_item: dict) -> str:
         new_item: The listing dict for the thrifted item.
 
     Returns:
-        A 2–4 sentence string usable as an Instagram/TikTok caption.
-        If outfit is empty or missing, return a descriptive error message
-        string — do NOT raise an exception.
+        A 2-4 sentence string in the style of an Instagram/TikTok caption,
+        mentioning the item name, price, and platform once each. Output
+        varies run to run for the same input, enforced with a higher LLM
+        temperature.
 
-    The caption should:
-    - Feel casual and authentic (like a real OOTD post, not a product description)
-    - Mention the item name, price, and platform naturally (once each)
-    - Capture the outfit vibe in specific terms
-    - Sound different each time for different inputs (use higher LLM temperature)
+        If outfit is missing or empty, returns a descriptive error message
+        string instead. This tool never raises for bad outfit input, the
+        agent's guard on session["outfit_suggestion"] makes that branch
+        unreachable in normal operation.
 
-    TODO:
-        1. Guard against an empty or whitespace-only outfit string.
-        2. Build a prompt that gives the LLM the item details and the outfit,
-           and asks for a caption matching the style guidelines above.
-        3. Call the LLM and return the response.
-
-    Before writing code, fill in the Tool 3 section of planning.md.
+    Raises:
+        Propagates Groq client errors, and raises RuntimeError if the LLM
+        returns an empty response, same contract as suggest_outfit. The
+        agent sets session["error"] but still shows the outfit suggestion,
+        so the user keeps the styling work even when the caption fails.
     """
-    # Replace this with your implementation
-    return ""
+    if not outfit or not outfit.strip():
+        return (
+            f"Can't create a fit card for '{new_item['title']}' because "
+            f"there is no outfit suggestion to caption. Run suggest_outfit "
+            f"for this item first, then try the fit card again."
+        )
+
+    prompt = "\n".join([
+        "Write a shareable caption for this thrifted find and the outfit "
+        "built around it.",
+        "",
+        "The item:",
+        _format_listing(new_item),
+        "",
+        "The outfit:",
+        outfit,
+        "",
+        "Rules for the caption:",
+        "- 2-4 sentences, plain text, no markdown",
+        "- casual and authentic, like a real OOTD post, not a product "
+        "description",
+        f"- mention the item name, the price (${new_item['price']:.2f}), "
+        f"and the platform ({new_item['platform']}) naturally, exactly once "
+        f"each, never repeating any of them",
+        "- capture the outfit vibe in specific terms, not generic hype",
+    ])
+
+    client = _get_groq_client()
+    response = client.chat.completions.create(
+        model=_GROQ_MODEL,
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "You write short, casual outfit captions for social "
+                    "media. You sound like a real person posting their "
+                    "thrift find, never like an ad."
+                ),
+            },
+            {"role": "user", "content": prompt},
+        ],
+        temperature=1.0,
+    )
+
+    text = (response.choices[0].message.content or "").strip()
+    if not text:
+        raise RuntimeError(
+            f"create_fit_card got an empty LLM response for "
+            f"'{new_item['title']}'"
+        )
+    return text
+
+
+# ── Tool 4: compare_prices (stretch: Price Comparison) ────────────────────────
+
+def compare_prices(item: dict) -> dict:
+    """
+    Estimate whether an item's price is fair based on comparable listings.
+
+    The router-visible parameter is item_id, resolved by the executor to
+    this listing dict per the state-by-reference design.
+
+    Comparables are listings in the same category sharing at least one
+    style_tag with the item, the item itself always excluded. Fewer than 3
+    falls back to the whole category. The verdict band is the comparable
+    median plus or minus 10 percent. Pure local computation, no LLM call.
+
+    Args:
+        item: The listing dict to assess.
+
+    Returns:
+        A dict with verdict ("below market", "fair", "above market", or
+        "not enough data"), item_price, comparable_count, comp_min,
+        comp_median, comp_max, and a one-sentence reasoning string.
+        On "not enough data" the comp stats are None. Never raises and
+        never blocks the core chain.
+    """
+    others = [l for l in load_listings() if l["id"] != item["id"]]
+    same_category = [l for l in others if l["category"] == item["category"]]
+
+    item_tags = set(item["style_tags"])
+    comparables = [
+        l for l in same_category if item_tags & set(l["style_tags"])
+    ]
+    if len(comparables) < 3:
+        comparables = same_category
+
+    price = item["price"]
+
+    if len(comparables) < 3:
+        return {
+            "verdict": "not enough data",
+            "item_price": price,
+            "comparable_count": len(comparables),
+            "comp_min": None,
+            "comp_median": None,
+            "comp_max": None,
+            "reasoning": (
+                f"Only {len(comparables)} comparable "
+                f"{item['category']} listing(s) exist, so price fairness "
+                f"can't be assessed for '{item['title']}'."
+            ),
+        }
+
+    prices = [l["price"] for l in comparables]
+    median = statistics.median(prices)
+
+    if price < median * 0.9:
+        verdict = "below market"
+        relation = "below"
+    elif price > median * 1.1:
+        verdict = "above market"
+        relation = "above"
+    else:
+        verdict = "fair"
+        relation = "right at"
+
+    return {
+        "verdict": verdict,
+        "item_price": price,
+        "comparable_count": len(comparables),
+        "comp_min": min(prices),
+        "comp_median": median,
+        "comp_max": max(prices),
+        "reasoning": (
+            f"At ${price:.2f} this item sits {relation} the "
+            f"${median:.2f} median of {len(comparables)} comparable "
+            f"{item['category']} listings."
+        ),
+    }
+
+
+# ── Tool 5: check_trends (stretch: Trend Awareness) ───────────────────────────
+
+def check_trends(
+    category: str | None = None,
+    size: str | None = None,
+) -> list[dict]:
+    """
+    Surface which styles are currently popular from the bundled
+    data/trends.json snapshot (the documented data source, interface
+    written so a live API could swap in).
+
+    Args:
+        category: Limit trends to one listing category, such as "tops".
+                  None returns trends across all categories.
+        size:     The user's size. When provided, each trend reports how
+                  many in-stock listings match both the trend and the size.
+                  None skips the stock check.
+
+    Returns:
+        Up to 5 trend dicts sorted by mentions, each with tag, mentions,
+        momentum, and in_stock (0 when size is None). Returns an empty
+        list if trends.json is missing or unreadable, or no trends match
+        the category. Trend data is flavor, never load-bearing, so this
+        tool never raises and never blocks the core flow.
+    """
+    try:
+        with open(_TRENDS_PATH, "r", encoding="utf-8") as f:
+            trends = json.load(f)["trends"]
+    except (OSError, json.JSONDecodeError, KeyError, TypeError):
+        return []
+
+    listings = load_listings()
+    results = []
+    for trend in trends:
+        tagged = [l for l in listings if trend["tag"] in l["style_tags"]]
+        if category is not None:
+            tagged = [l for l in tagged if l["category"] == category]
+            if not tagged:
+                continue
+
+        in_stock = 0
+        if size is not None:
+            in_stock = sum(
+                1 for l in tagged if _size_matches(size, l["size"])
+            )
+
+        results.append({
+            "tag": trend["tag"],
+            "mentions": trend["mentions"],
+            "momentum": trend["momentum"],
+            "in_stock": in_stock,
+        })
+
+    results.sort(key=lambda t: t["mentions"], reverse=True)
+    return results[:5]
+
+
+# ── Tool 6: save_style_preference (stretch: Style Profile Memory) ─────────────
+
+def save_style_preference(preference: str) -> list[str] | str:
+    """
+    Persist a style preference to data/style_profile.json.
+
+    Saving is the only router-visible operation. Reading is automatic, the
+    executor loads the profile at session start and injects it into the
+    suggest_outfit prompt the same way it injects the wardrobe.
+
+    Args:
+        preference: A short preference statement, such as "loves grunge"
+                    or "dislikes pink".
+
+    Returns:
+        The updated list of saved preferences, so the router can confirm
+        to the user what is now remembered. Saves dedupe case-insensitively,
+        re-saving an existing preference returns the list unchanged.
+
+        If the file cannot be written, returns a descriptive error string
+        instead of raising. A failed write never affects the current
+        interaction. A corrupt or missing profile on the read side is
+        treated as an empty profile.
+    """
+    try:
+        with open(_STYLE_PROFILE_PATH, "r", encoding="utf-8") as f:
+            preferences = list(json.load(f)["preferences"])
+    except (OSError, json.JSONDecodeError, KeyError, TypeError):
+        preferences = []
+
+    cleaned = preference.strip()
+    already_saved = cleaned.lower() in (p.lower() for p in preferences)
+
+    if cleaned and not already_saved:
+        preferences.append(cleaned)
+        try:
+            with open(_STYLE_PROFILE_PATH, "w", encoding="utf-8") as f:
+                json.dump({"preferences": preferences}, f, indent=2)
+        except OSError as exc:
+            return (
+                f"Couldn't save the preference '{cleaned}' to the style "
+                f"profile ({exc}). The rest of the session continues "
+                f"normally, try saving it again later."
+            )
+
+    return preferences
