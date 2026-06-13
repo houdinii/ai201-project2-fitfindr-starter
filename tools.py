@@ -13,6 +13,7 @@ Tools:
 """
 
 import os
+import re
 
 from dotenv import load_dotenv
 from groq import Groq
@@ -35,6 +36,24 @@ def _get_groq_client():
 
 
 # ── Tool 1: search_listings ───────────────────────────────────────────────────
+
+def _tokenize(text: str) -> list[str]:
+    """Lowercase and split text into word tokens, keeping apostrophes."""
+    return re.findall(r"[a-z0-9']+", text.lower())
+
+
+def _size_matches(requested: str, listing_size: str) -> bool:
+    """
+    Token-based size match. The listing size splits on '/', spaces, and
+    parentheses, and the requested size must equal one of the tokens, so
+    "M" matches "S/M" but "L" never matches "XL". "One Size" matches any
+    requested size.
+    """
+    if "one size" in listing_size.lower():
+        return True
+    tokens = [t for t in re.split(r"[/\s()]+", listing_size.lower()) if t]
+    return requested.strip().lower() in tokens
+
 
 def search_listings(
     description: str,
@@ -69,8 +88,32 @@ def search_listings(
 
     Before writing code, fill in the Tool 1 section of planning.md.
     """
-    # Replace this with your implementation
-    return []
+    query_words = set(_tokenize(description))
+    scored = []
+
+    for listing in load_listings():
+        if max_price is not None and listing["price"] > max_price:
+            continue
+        if size is not None and not _size_matches(size, listing["size"]):
+            continue
+
+        haystack_parts = [
+            listing["title"],
+            listing["description"],
+            " ".join(listing["style_tags"]),
+            " ".join(listing["colors"]),
+            listing["category"],
+        ]
+        if listing["brand"] is not None:
+            haystack_parts.append(listing["brand"])
+        haystack = set(_tokenize(" ".join(haystack_parts)))
+
+        score = len(query_words & haystack)
+        if score > 0:
+            scored.append((score, listing))
+
+    scored.sort(key=lambda pair: pair[0], reverse=True)
+    return [listing for _, listing in scored]
 
 
 # ── Tool 2: suggest_outfit ────────────────────────────────────────────────────

@@ -11,7 +11,7 @@ The `search_listings` tool searches the listings data for items matching the giv
 
 Scoring is a keyword overlap. Each listing's `title`, `description`, `style_tags`, `colors`, `category`, and `brand` are joined into one lowercase haystack string, and the score is the count of query words that hit. `brand` may be `null` and is skipped when missing. Listings with a score of 0 are dropped.
 
-Size matching is case-insensitive and token-based. The listing's size string is split on `/`, spaces, and parentheses, and the requested size must equal one of the tokens, so "M" matches "S/M" and "M/L" but "L" does not match "XL". Listings marked "One Size" match any requested size. Sizes span letter sizes, shoe sizes ("US 8"), and waist sizes ("W30"). Matching is string-based, no numeric conversion.
+Size matching is case-insensitive and token-based. The listing's size string is split on `/`, spaces, and parentheses, and the requested size must equal one of the tokens, so "M" matches "S/M" and "M/L" but "L" does not match "XL". Listings marked "One Size" match any requested size. Precisely: the One Size check is containment of the phrase "one size" in the lowercased size string, not exact equality, because the dataset has three variants ("One Size", "One Size (adjustable)", "One Size / Oversized") and token matching alone would wrongly reject the variants for every requested size. Sizes span letter sizes, shoe sizes ("US 8"), and waist sizes ("W30"). Matching is string-based, no numeric conversion.
 
 If nothing is found, the tool returns an empty list.
 
