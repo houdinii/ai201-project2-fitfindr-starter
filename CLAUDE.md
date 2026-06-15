@@ -67,6 +67,22 @@ Required workflow order (graded): planning.md filled BEFORE implementation code;
   item excluded from its own comparables, comp stats are `None` on
   "not enough data". The tools.py function takes the resolved listing dict,
   `item_id` is the router-visible param, per the state-by-reference design.
+- 2026-06-13: GOVERNING PRODUCT PRINCIPLE (Brian's call): FitFindr is an outfit
+  builder, not a search engine. Every interaction ends exactly one of two ways:
+  a built outfit finished with a fit card, or a brief punt (short answer or
+  redirect for greetings, info questions, no-results). NEVER a list of listings
+  for the user to choose from. Even vague or multi-option requests ("a tee or a
+  jacket") mean pick one best match and build, never ask the user to narrow it.
+  Divergent best match (size, budget, looser style) builds anyway with a brief
+  acknowledgement, only skip when it genuinely cannot work (shoes too small,
+  needs E1 to enforce rigorously). Implemented in `_SYSTEM_PROMPT`. Resolves B3,
+  scopes B4. The lens for future router behavior decisions.
+- 2026-06-13: save_style_preference triggers ONLY on a first-person lasting
+  taste ("I mostly wear", "I'm really into grunge lately", "I love vintage",
+  "never show me pink"), NOT on item descriptions for the current request
+  ("I want a vintage streetwear tee" is search terms, not a saved preference).
+  When in doubt, do not save. Tightened in `_SYSTEM_PROMPT` after the router
+  over-saved on a rambling item description.
 - 2026-06-13: Style profile is now surfaced to the ROUTER too, not only to
   `suggest_outfit`. `run_agent` appends the loaded `session["style_profile"]`
   to the router's system content at session start, and the system prompt tells

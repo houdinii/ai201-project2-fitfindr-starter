@@ -1,67 +1,119 @@
-# Demo Video Plan — 3 to 5 minutes, HARD limit
+# Demo — Two-Pass Workflow (silent capture, then voiceover)
 
-Target runtime 4:30. Every shot lists the rubric points it collects.
-The video carries 9 required points + all 7 stretch points. Do not improvise, read the beats.
+Record the screen silently first, then narrate over it in a quiet moment. This
+is easier than live narration and sounds better. Target final cut 4:30, hard
+limit 3 to 5 minutes.
 
-## Pre-flight (before recording anything)
-- [ ] Delete `data/style_profile.json` so the save/recall story starts clean
-- [ ] Terminal font size up, dark theme, window big enough to read on a phone
-- [ ] `python app.py` running and tested once off camera
-- [ ] Both demo queries pasted in a scratch file, ready to copy
-- [ ] Screen recorder + mic checked, do one 20-second test clip
-- [ ] Rehearse the whole thing once with a timer. Over 5:00 = cut narration, not exhibits
+Workflow:
+1. **Pass 1** — capture the screen silently, running each scene's query in order, holding on each result so there's footage to talk over.
+2. **Pass 2** — record the voiceover from the script below, in a quiet room, scene by scene.
+3. **Pass 3** — lay the voiceover over the footage in any editor (iMovie, CapCut, QuickTime), trim to length, export.
 
 ---
 
-## Shot 1 — Intro (0:00 to 0:15)
-**On camera:** the Gradio app, open and idle.
-**Say:** "This is FitFindr, a multi-tool thrifting agent. An LLM router picks the tools, hard code guards bound what it can do. Six tools, one session dict."
-**Collects:** context for everything that follows.
+## Pre-flight (before Pass 1)
 
-## Shot 2 — Happy path, the big one (0:15 to 1:40)
-**On camera:** Gradio. Paste query 1:
-"I've been really into streetwear lately. Can you find me some vintage Levi's, waist 30, under $40? And tell me if that's a fair price, I always overpay."
-**Narrate as panels fill, name each tool as it fires:**
-- "It saved 'streetwear' as a style preference, that's `save_style_preference`"
-- "`search_listings` parsed description, size W30, max price 40 from my sentence, found the Levi's 501s"
-- "`compare_prices` says [verdict], based on comparable listings, that's the price tool"
-- "`suggest_outfit` is styling it against my actual wardrobe"
-- "`create_fit_card` wrote the caption, item, price, platform, ready to post"
-**Collects:** all 3 required tools in one interaction (1pt), complete query-to-fit-card workflow (1pt), narration of each step (1pt), price comparison stretch (+2), the save half of style memory.
-
-## Shot 3 — State passing, terminal (1:40 to 2:10)
-**On camera:** terminal. Run the agent CLI version of the same query, show `session["tool_log"]` and the printed session.
-**Say:** "The router never retypes data. It said `item_id lst_001`, three characters. The executor pulled the real dict from the session, the same object search returned is what suggest_outfit received, and the outfit string is what create_fit_card received. The user never re-entered anything."
-**Point at:** `selected_item` id matching the search result, `outfit_suggestion` flowing into the fit card call.
-**Collects:** item flows search → suggest without re-entry (1pt), outfit flows suggest → card without re-entry (1pt).
-
-## Shot 4 — Style memory recall, fresh session (2:10 to 2:45)
-**On camera:** restart the app or new CLI run, visibly fresh. First `cat data/style_profile.json` to show "streetwear" persisted on disk. Then query 2:
-"Find me a jacket, size M, under $50."
-**Say:** "New session, I never mentioned streetwear this time. The suggestion leans streetwear because the profile loaded from disk at session start."
-**Collects:** style profile memory, two interactions, no re-entry (+2).
-
-## Shot 5 — Trends (2:45 to 3:15)
-**On camera:** query 3: "What's trending in my size? Style me something."
-**Say:** "`check_trends` reads the trends snapshot, filters to what's actually in stock in my size, and the outfit suggestion name-checks the trend. Trend with zero stock doesn't get pushed."
-**Collects:** trend info visibly influencing the suggestion (+2).
-
-## Shot 6 — Failure, retry, adaptiveness (3:15 to 4:10)
-**On camera:** the impossible query:
-"I need a designer ballgown, size XXS, under $5."
-**Narrate the cascade:**
-- "Zero results. Watch what it does instead of crashing: retry one, size filter dropped, it tells me. Retry two, price cap dropped, it tells me."
-- "Still nothing, so it stops with a specific message: what failed, that the cheapest item in stock is $12, what to change."
-- "And look at the tool log next to the happy path: completely different sequence. It never called suggest_outfit with empty results. The agent adapts, it doesn't run a script."
-**Collects:** different behavior for non-standard input (2pts), deliberately triggered failure (1pt), specific and actionable response (1pt), retry with explanation (+1).
-
-## Shot 7 — Close (4:10 to 4:30)
-**On camera:** the fit card from shot 2.
-**Say:** "Query to shareable fit card, six tools, every failure handled. FitFindr."
+- [ ] Groq working (free tier resets daily). Quick test:
+      `python -c "from tools import _get_groq_client,_GROQ_MODEL as m; print(_get_groq_client().chat.completions.create(model=m,messages=[{'role':'user','content':'hi'}],max_tokens=3).choices[0].message.content)"`
+      Must print text, not a rate-limit error. **Record on Groq, not the sidecar.**
+- [ ] Reset the saved profile for Scene 5: `rm -f data/style_profile.json`
+- [ ] Launch with the log visible: `FITFINDR_LOG=1 python app.py`
+- [ ] Screen arranged so BOTH show: the browser (Gradio 3 panels) and the terminal (live log). The log is your state-passing proof.
+- [ ] Screen recorder ready. One throwaway test clip first.
 
 ---
 
-## After recording
-- [ ] Watch it once. Confirm every "Collects" line above is actually visible
-- [ ] Confirm runtime is between 3:00 and 5:00
-- [ ] Tick the demo rows in RUBRIC_LEDGER.md
+## PASS 1 — Silent screen capture
+
+Run the queries in this exact order. **No talking.** After each result finishes
+rendering, **hold still for ~4 seconds** (don't move the mouse) so you have clean
+footage to narrate over. If a query misbehaves, just re-run it.
+
+You can record this as one continuous take, or stop between scenes and do
+separate clips, whichever is easier to edit.
+
+| # | TYPE THIS into Gradio | After it finishes |
+|---|---|---|
+| 1 | `find me a 90s track jacket` | Hold on the 3 filled panels ~4s. Then slowly move the mouse to the terminal and hold on the log showing `lst_004` flowing search → suggest → card ~5s. |
+| 2 | `designer ballgown size XXS under $5` | Hold on the error message ~4s, then hold on the terminal log showing the retries ~4s. |
+| 3 | `is the vintage Levi's 501 a good deal?` | Hold on the price verdict + reasoning text ~5s. |
+| 4 | `what's popular right now? style me something in size M` | Hold on the outfit text where it names a trend ~5s. (If it doesn't clearly name a trend, re-run.) |
+| 5a | `I'm really into grunge lately, find me a flannel` | Hold on the terminal showing `save_style_preference` ~4s. |
+| 5b | reload the page, then `find me a tee to style` | Hold on the grunge-leaning outfit ~5s. |
+
+That's the whole capture. Stop recording.
+
+---
+
+## PASS 2 — Voiceover script
+
+Record these in a quiet room. Read naturally, pause between scenes. You can
+record one clip per scene and line them up in editing. Rough durations in
+brackets, total ~4:15 of talking.
+
+**Scene 1 [~45s]**
+"This is FitFindr, an agent that finds secondhand fashion and styles it. I asked
+for a 90s track jacket in plain language. In the log you can see the router call
+three tools in order: `search_listings` finds the jacket, `suggest_outfit`
+styles it against my saved wardrobe naming real pieces, and `create_fit_card`
+writes the shareable caption. One query, three tools, ending in a finished
+outfit. And notice the item id the search returned is the exact same id passed
+into the styling and the caption. The agent never re-types the item, it passes a
+reference and the code resolves it. State flows through the session, not through
+the language model."
+
+**Scene 2 [~40s]**
+"Now something impossible, a designer ballgown in size double-extra-small under
+five dollars. Nothing matches, so instead of crashing, the agent adapts. It
+retries automatically, first dropping the size filter and telling me, then
+dropping the price cap and telling me again. Still nothing, so it stops with a
+specific message: the cheapest item in stock is twelve dollars, try a different
+description. And notice this tool sequence is completely different from the happy
+path. The agent responds to what each tool returns, it never tried to build an
+outfit out of nothing."
+
+**Scene 3 [~30s]**
+"Here I ask whether something's a good deal. The router calls `compare_prices`,
+which gathers comparable listings in the same category and compares against their
+median price. It returns a verdict with the actual numbers it used. A real price
+assessment grounded in the dataset, not a guess."
+
+**Scene 4 [~35s]**
+"This one checks trends. The trend data is real, it's a snapshot of actual
+Wikipedia readership for fashion styles, fetched by a script in the repo, not
+invented numbers. The agent pulls what's trending and in stock in my size, and
+the outfit it builds references that trend directly."
+
+**Scene 5 [~45s]**
+"Last, memory across sessions. I mention that I'm into grunge, and in the log you
+can see it call `save_style_preference` and write that to disk. Now I reload, a
+completely fresh session, and I ask for a tee to style without mentioning grunge
+at all. But the outfit comes back grunge-leaning, because at session start it
+loaded my saved preference from the file. It remembered me without my repeating
+myself."
+
+**Scene 6 [~12s]**
+"So that's FitFindr. Plain-language query to a shareable fit card, six tools, an
+LLM router with hard guardrails, and every failure handled gracefully. Thanks for
+watching."
+
+---
+
+## PASS 3 — Assemble
+
+- [ ] Drop the footage and the voiceover clips into an editor.
+- [ ] Line each VO scene up with its footage. If a scene's talk runs longer than its footage, slow/extend the held shot or trim words.
+- [ ] Trim the whole thing to between 3:00 and 5:00.
+- [ ] Watch it once: audio clear, on-screen text readable.
+- [ ] Export, upload, grab the link.
+
+## After
+- [ ] Paste the video link into README.md (TODO at the top).
+- [ ] Commit + push to your fork.
+- [ ] Submit repo link + video link through the Course Portal.
+
+## Notes
+- Scenes 1, 2, 3, 5 are reliable. Scene 4 (trends) is the one to re-run if the
+  outfit doesn't clearly name a trend.
+- If holding silent shots feels awkward, record each scene as its own clip and
+  just keep the good ones.

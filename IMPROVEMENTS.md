@@ -57,7 +57,7 @@ the router stops echoing it. The observation to the LLM only needs the result
 summary ("4 results, selected lst_032"). The user-facing "what was loosened"
 line then appears exactly once, from `notices`.
 
-### B3. Shopping queries sometimes stop and ask instead of finishing with a fit card
+### B3. Shopping queries sometimes stop and ask instead of finishing with a fit card — RESOLVED 2026-06-13
 
 **Found:** 2026-06-13, on "jeans under $20" and "jacket under $25".
 
@@ -88,10 +88,26 @@ give the price verdict. Charming or presumptuous in a styling app, undecided.
 branch) or the stretches (price verdict still surfaces, trend-influence exhibit
 is a separate query). Both are prompt nudges, no code.
 
+**DECISION (2026-06-13):** Brian chose the simple rule and stated the governing
+principle: FitFindr is an outfit builder, not a search engine. When the user
+wants to find or wear something and search returns results, pick the single
+best match and build the outfit through to a fit card, never list options and
+ask. If the chosen item diverges (different size, over budget, looser style),
+build it anyway and briefly acknowledge the difference. Only skip an item when
+it genuinely cannot work (shoes too small).
+
+**RESOLUTION:** implemented in `_SYSTEM_PROMPT` (the outfit-builder principle up
+top, plus the divergence/decline guidance after the flow). Pure info questions
+("what's trending", "is X a good deal") can still just answer, the principle is
+scoped to find/wear requests. Verified via sidecar: the Group J rambling query
+and "jacket under $25" now both run search to suggest_outfit to create_fit_card
+with no list-and-ask. 59 tests still pass.
+
 **Parked sub-part:** price-aware selection. When the budget could not be met,
 pick the cheapest result (closest to the stated "under $X" intent) rather than
 the top relevance match. Needs its own logic since search sorts by relevance,
-not price. Lower priority.
+not price. Lower priority. Ties to E1 (directional sizing) for the rigorous
+"too small to fit" guard the principle's last clause depends on.
 
 ### B4. Trend output not used to drive the follow-up search
 
